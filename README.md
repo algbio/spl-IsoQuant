@@ -37,7 +37,7 @@ For example, using the toy data provided within this repository,
 
 
 <a name="sec1"></a>
-# About IsoQuant
+# About Spl-IsoQuant
 
 Spl-IsoQuant is a tool for the genome-based analysis of spatial long RNA reads obtained with Spl-ISO-Seq protocol.
 It supports both PacBio and Oxford Nanopore sequencing data. 
@@ -80,7 +80,7 @@ You will also need
 * [pyfaidx](https://pypi.org/project/pyfaidx/)
 * [pandas](https://pandas.pydata.org/)
 * [pyyaml](https://pypi.org/project/PyYAML/)
-* [editditance](https://pypi.org/project/editdistance/)
+* [editdistance](https://pypi.org/project/editdistance/)
 * [minimap2](https://github.com/lh3/minimap2)
 * [samtools](http://www.htslib.org/download/)
  
@@ -110,7 +110,7 @@ Typical installation should take no more than a few minutes.
 ## Verifying your installation
 To verify IsoQuant installation type
 ```bash
-isoquant.py --test
+splisoquant.py --test
 ```
 to run on toy dataset.  
 If the installation is successful, you will find the following information at the end of the log:
@@ -131,7 +131,7 @@ To run IsoQuant, you should provide:
   * FASTA/FASTQ (can be gzipped);
   * Sorted and indexed BAM;
 * Reference sequence in FASTA format (can be gzipped);
-* _Optionally_, you may provide a reference gene annotation in gffutils database or GTF/GFF format (can be gzipped).
+* Reference gene annotation in gffutils database or GTF/GFF format (can be gzipped).
 
 
 
@@ -150,7 +150,7 @@ interested in comparing expression between different replicas/conditions within 
 
 
 <a name="sec3.2"></a>
-## IsoQuant command line options
+## Spl-IsoQuant command line options
 
 
 ### Basic options
@@ -174,8 +174,6 @@ reference annotation database.
 `--data_type` or `-d`
     Type of data to process, supported values are:  `pacbio_ccs` (same as `pacbio`), `nanopore` (same as `ont`)
 and  `assembly` (same as `transcripts`). This option affects the algorithm parameters.
-
-Note, that for novel mono-exonic transcripts are not reported for ONT data by default, use `--report_novel_unspliced true`.
 
 `--reference` or `-r`
     Reference genome in FASTA format (can be gzipped), required even when BAM files are provided.
@@ -206,34 +204,6 @@ expression tables with "per-file" columns will be computed. See more about [inpu
 expression tables with "per-file" columns will be computed. See more about [input data](#sec3.1).
 
 
-#### Providing input reads via YAML configuration file:
-
-`--yaml`
-    Path to dataset description file in [YAML](https://www.redhat.com/en/topics/automation/what-is-yaml) format. The file should contain a list with `data format` property,
-which can be `fastq` or `bam` and an individual entry for experiment.
-Each experiment is represented as set of parameters (e.g. in curly brackets):
-- `name` - experiment name, string (optional);
-- `long read files` - a list of paths to long read files matching the specified format;
-- `lables` - a list labels for long read files for expression table (optional, must be equal to the number of long read files)
-- `illumina bam` - a list of paths to short read BAM files for splice site correction (optional).
-
-All paths should be either absolute or relative to the YAML file.
-See more in [examples](#examples).
-
-#### Providing input reads via dataset description file (deprecated since 3.4)
-
-`--bam_list` (_deprecated since 3.4_)
-    Text file with list of BAM files, one file per line. Each file must be sorted and indexed.
-Leave empty line or experiment name starting with # between the experiments.
-For each experiment IsoQuant will generate a individual GTF and count tables.
-You may also give a label for each file specifying it after a colon (e.g. `/PATH/TO/file.bam:replicate1`).
-
-`--fastq_list` (_deprecated since 3.4_)
-    Text file with list of FASTQ/FASTA files (can be gzipped),  one file per line.
-Leave empty line or experiment name starting with # between the experiments.
-For each experiment IsoQuant will generate a individual GTF and count tables.
-You may also give a label for each file specifying it after a colon (e.g. `/PATH/TO/file.fastq:replicate1`).
-
 #### Other input options:
 `--stranded`
     Reads strandness type, supported values are: `forward`, `reverse`, `none`.
@@ -248,39 +218,7 @@ You may also give a label for each file specifying it after a colon (e.g. `/PATH
     Sets space-separated sample names. Make sure that the number of labels is equal to the number of files.
 Input file names are used as labels if not set.
 
-`--read_group`
- Sets a way to group feature counts (e.g. by cell type). Available options are:
- * `file_name`: groups reads by their original file names (or file name labels) within an experiment.
-This option makes sense when multiple files are provided.
-This option is designed for obtaining expression tables with a separate column for each file.
-If multiple BAM/FASTQ files are provided and `--read_group` option is not set, IsoQuant will set `--read_group:file_name`
-by default.
- * `tag`: groups reads by BAM file read tag: set `tag:TAG`, where `TAG` is the desired tag name
-(e.g. `tag:RG` with use `RG` values as groups, `RG` will be used if unset);
- * `read_id`: groups reads by read name suffix: set `read_id:DELIM` where `DELIM` is the
-symbol/string by which the read id will be split
-(e.g. if `DELIM` is `_`, for read `m54158_180727_042959_59310706_ccs_NEU` the group will set as `NEU`);
- * `file`: uses additional file with group information for every read: `file:FILE:READ_COL:GROUP_COL:DELIM`,
-where `FILE` is the file name, `READ_COL` is column with read ids (0 if not set),
-`GROUP_COL` is column with group ids (1 if not set),
-`DELIM` is separator symbol (tab if not set). File can be gzipped.
 
-
-### Output options
-
-`--sqanti_output`
-    Produce comparison between novel and known transcripts in SQANTI-like format.
-    Will take effect only when reference annotation is provided.
-
-`--check_canonical`
-    Report whether read or constructed transcript model contains non-canonical splice junction (requires more time).
-
-`--count_exons`
-    Perform exon and intron counting in addition to gene and transcript counting.
-    Will take effect only when reference annotation is provided.
-
-`--bam_tags`
-    Comma separated list of BAM tags that will be imported into `read_assignments.tsv`.
 
 ### Pipeline options
 
@@ -298,97 +236,7 @@ where `FILE` is the file name, `READ_COL` is column with read ids (0 if not set)
 `--clean_start`
     Do not use previously generated gene database, genome indices or BAM files, run pipeline from the very beginning (will take more time).
 
-`--no_model_construction`
-    Do not report transcript models, run read assignment and quantification of reference features only.
 
-`--run_aligner_only`
-    Align reads to the reference without running IsoQuant itself.
-
-
-### Algorithm parameters
-<a name="params"></a>
-
-#### Quantification
-
-`--transcript_quantification` Transcript quantification strategy;
-`--gene_quantification` Gene quantification strategy;
-
-Available options for quantification:
-
-* `unique_only` - use only reads that are uniquely assigned and consistent with a transcript/gene
-(i.e. flagged as unique/unique_minor_difference), default fot transcript quantification;
-* `with_ambiguous` - in addition to unique reads, ambiguously assigned consistent reads are split between features with equal weights 
-(e.g. 1/2 when a read is assigned to 2 features simultaneously);
-* `unique_splicing_consistent` - uses uniquely assigned reads that do not contradict annotated splice sites
-(i.e. flagged as unique/unique_minor_difference or inconsistent_non_intronic), default for gene quantification;
-* `unique_inconsistent` - uses uniquely assigned reads allowing any kind of inconsistency;
-* `all` - all of the above.
-
-
-#### Read to isoform matching:
-
-`--matching_strategy` A preset of parameters for read-to-isoform matching algorithm, should be one of:
-
-* `exact` - delta = 0, all minor errors are treated as inconsistencies;  
-* `precise` - delta = 4, only minor alignment errors are allowed, default for PacBio data;  
-* `default` - delta = 6, alignment errors typical for Nanopore reads are allowed, short novel introns are treated as deletions;   
-* `loose` - delta = 12, even more serious inconsistencies are ignored, ambiguity is resolved based on nucleotide similarity.
-
-Matching strategy is chosen automatically based on specified data type.
-However, the parameters will be overridden if the matching strategy is set manually.
-
-#### Read alignment correction:
-
-`--splice_correction_strategy` A preset of parameters for read alignment correction algorithms, should be one of:
-
-* `none` - no correction is applied;  
-* `default_pacbio` - optimal settings for PacBio CCS reads;
-* `default_ont` - optimal settings for ONT reads;
-* `conservative_ont` - conservative settings for ONT reads, only incorrect splice junction and skipped exons are fixed;
-* `assembly` - optimal settings for a transcriptome assembly;    
-* `all` - correct all discovered minor inconsistencies, may result in overcorrection.
-
-This option is chosen automatically based on specified data type, but will be overridden if set manually.
-
-#### Transcript model construction:
-`--model_construction_strategy` A preset of parameters for transcript model construction algorithm, should be one of
-
-* `reliable` - only the most abundant and reliable transcripts are reported, precise, but not sensitive;  
-* `default_pacbio` - optimal settings for PacBio CCS reads;
-* `sensitive_pacbio` - sensitive settings for PacBio CCS reads, more transcripts are reported possibly at a cost of precision;
-* `fl_pacbio` - optimal settings for full-length PacBio CCS reads, will be used if `--data_type pacbio_ccs` and `--fl_data` options are set;
-* `default_ont` - optimal settings for ONT reads, novel mono-exonic transcripts are not reported (use `--report_novel_unspliced true`);
-* `sensitive_ont` - sensitive settings for ONT reads, more transcripts are reported possibly at a cost of precision (including novel mono-exonic isoforms);
-* `assembly` - optimal settings for a transcriptome assembly: input sequences are considered to be reliable and each transcript to be represented only once, so abundance is not considered;    
-* `all` - reports almost all novel transcripts, loses precision in favor to recall.
-
-This option is chosen automatically based on specified data type, but will be overridden if set manually.
-
-
-`--report_novel_unspliced` Report novel mono-exonic transcripts (set `true` or `false`).
-The default value is `false` for Nanopore data and `true` for other data types.
-The main explanation that some aligners report a lot of false unspliced alignments
-for ONT reads.
-
-
-`--report_canonical`
-    Strategy for reporting novel transcripts based on canonical splice sites, should be one of:
-
-* `auto` - automatic selection based on the data type and model construction strategy (default); 
-* `only_canonical` - report novel transcripts, which contain only canonical splice sites;
-* `only_stranded` - report novel transcripts, for which the strand can be unambiguously derived using splice sites and 
-presence of a polyA tail, allowing some splice sites to be non-canonical;
-* `all` -- report all transcript model regardless of their splice sites.
-
-
-`--polya_requirement` Strategy for using polyA tails during transcript model construction, should be one of:
-
-* `auto` - default behaviour: polyA tails are required if at least 70% of the reads have polyA tail; 
-polyA tails are always required for 1/2-exon transcripts when using ONT data (this is caused by elevated number of false 1/2-exonic alignments reported by minimap2); 
-* `never` - polyA tails are never required; use this option **at your own risk** as it may noticeably increase false discovery rate, especially for ONT data;
-* `always` - reported transcripts are always required to have polyA support in the reads.
-
-Note, that polyA tails are always required for reporting novel unspliced isoforms. 
 
 
 
@@ -427,25 +275,6 @@ We recommend _not_ to modify these options unless you are clearly aware of their
     Cache read alignments instead for making several passes over a BAM file, noticeably increases RAM usage, 
 but may improve running time when disk I/O is relatively slow.
 
-`--min_mapq`
-    Filers out all alignments with MAPQ less than this value (will also filter all secondary alignments, as they typically have MAPQ = 0).
-
-`--inconsistent_mapq_cutoff`
-    Filers out inconsistent alignments with MAPQ less than this value (works when the reference annotation is provided, default is 5).
-
-`--simple_alignments_mapq_cutoff`
-    Filers out alignments with 1 or 2 exons and MAPQ less than this value (works only in annotation-free mode, default is 1).
-
-`--normalization_method`
-    Method for normalizing non-grouped counts into TPMs:
-* `simple` - standard method, scale factor equals to 1 million divided by the counts sum (default);
-* `usable_reads` - includes all reads assigned to a feature including the ones that were filtered out
-during quantification (i.e. inconsistent or ambiguous);
-scale factor equals to 1 million divided by the number of all assigned reads.
-In this case the sum of all gene/transcript TPMs may not add up to 1 million.
-Experiments with simulated data show that this method could give more accurate estimations.
-However, normalization method does not affect correlation/relative proportions.
-
 
 ### Examples
 <a name="examples"></a>
@@ -453,39 +282,39 @@ However, normalization method does not affect correlation/relative proportions.
 * Mapped PacBio CCS reads in BAM format; pre-converted gene annotation:
 
 ```bash
-isoquant.py -d pacbio_ccs --bam mapped_reads.bam \
+splisoquant.py -d pacbio_ccs --bam mapped_reads.bam \
  --genedb annotation.db --output output_dir
 ```
 
 * Nanopore dRNA stranded reads; official annotation in GTF format, use custon prefix for output:
 ```bash
-isoquant.py -d nanopore --stranded forward --fastq ONT.raw.fastq.gz \
+splisoquant.py -d nanopore --stranded forward --fastq ONT.raw.fastq.gz \
  --reference reference.fasta --genedb annotation.gtf --complete_genedb \
  --output output_dir --prefix My_ONT
 ```
 
 * Nanopore cDNA reads; no reference annotation:
 ```bash
-isoquant.py -d nanopore --fastq ONT.cDNA.raw.fastq.gz \
+splisoquant.py -d nanopore --fastq ONT.cDNA.raw.fastq.gz \
  --reference reference.fasta --output output_dir --prefix My_ONT_cDNA
 ```
 
 * PacBio FL reads; custom annotation in GTF format, which contains only exon features:
 ```bash
-isoquant.py -d pacbio_ccs --fl_data --fastq CCS.fastq \
+splisoquant.py -d pacbio_ccs --fl_data --fastq CCS.fastq \
  --reference reference.fasta --genedb genes.gtf --output output_dir
 ```
 
 * Nanopore cDNA reads, multiple samples/replicas within a single experiment; official annotation in GTF format:
 ```bash
-isoquant.py -d nanopore --bam ONT.cDNA_1.bam ONT.cDNA_2.bam ONT.cDNA_3.bam \
+splisoquant.py -d nanopore --bam ONT.cDNA_1.bam ONT.cDNA_2.bam ONT.cDNA_3.bam \
  --reference reference.fasta --genedb annotation.gtf --complete_genedb --output output_dir
  --predix ONT_3samples --labels A1 A2 A3
 ```
 
 * ONT cDNA reads; 2 experiments with 3 replicates; official annotation in GTF format:
 ```bash
-isoquant.py -d nanopore --yaml dataset.yaml  \
+splisoquant.py -d nanopore --yaml dataset.yaml  \
  --complete_genedb --genedb genes.gtf \
  --reference reference.fasta --output output_dir
 ```
@@ -533,7 +362,7 @@ Expression tables will have columns "Replicate1", "Replicate2" and "Replicate3".
 
 * ONT cDNA reads; 1 experiment with 2 replicates, each replicate has 2 files; official annotation in GTF format:
 ```bash
-isoquant.py -d nanopore --yaml dataset.yaml  \
+splisoquant.py -d nanopore --yaml dataset.yaml  \
   --complete_genedb --genedb genes.gtf \
  --reference reference.fasta --prefix MY_SAMPLE \
  --output output_dir  
@@ -720,40 +549,6 @@ In the number of groups exceeds 10, file will contain 3 columns:
 * `feature_id` - genomic feature ID;
 * `group_id` - name of the assigned group;
 * `TPM` or `count` - expression value (float).
-
-#### Exon and intron count format
-
-Tab-separated values, the columns are:
-
-* `chr` - chromosome ID;
-* `start` - feature leftmost 1-based positions;
-* `end` - feature rightmost 1-based positions;
-* `strand` - feature strand;
-* `flags` - symbolic feature flags, can contain the following characters:
-    - `X` - terminal feature;
-    - `I` - internal feature;
-    - `T` - feature appears as both terminal and internal in different isoforms;
-    - `S` - feature has similar positions to some other feature;
-    - `C` - feature is contained in another feature;
-    - `U` - unique feature, appears only in a single known isoform;
-    - `M` - feature appears in multiple different genes.
-* `gene_ids` - list if gene ids feature belong to;
-* `group_id` - read group if provided (NA by default);
-* `include_counts` - number of reads that include this feature;
-* `exclude_counts` - number of reads that span, but do not include this feature;
-
-#### Transcript models format
-
-Constructed transcript models are stored in usual [GTF format](https://www.ensembl.org/info/website/upload/gff.html).
-Contains `exon`, `transcript` and `gene` features.
-Transcript ids have the following format: `transcript_###.TYPE`,
-where `###` is the unique number (not necessarily consecutive) and TYPE can be one of the following:
-* known - previously annotated transcripts;
-* nic - novel in catalog, new transcript that contains only annotated introns;
-* nnic - novel not in catalog, new transcript that contains unannotated introns.
-
-The `attribute` field also contains `gene_id` (either matches reference gene id or can be `novel_gene_###`), `reference_gene_id` (same value) and `reference_transcript_id` (either original isoform id or `novel`).
-In addition, it contains `canonical` property if `--check_canonical` is set.
 
 
 

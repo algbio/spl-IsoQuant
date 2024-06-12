@@ -107,7 +107,7 @@ class QuantificationConfig:
         self.sim_name = os.path.splitext(os.path.basename(self.simulated_reads))[0]
 
         # isoquant params
-        self.isoquant_path = str(pathlib.Path(__file__).parents[1].absolute() / 'isoquant.py')
+        self.isoquant_path = str(pathlib.Path(__file__).parents[1].absolute() / 'splisoquant.py')
         self.transcript_counts = f'{self.iso_output}/00_{self.sim_name}/00_{self.sim_name}.transcript_counts.tsv'
         self.transcript_model_counts = f'{self.iso_output}/00_{self.sim_name}/00_{self.sim_name}.transcript_models_counts.tsv'
         self.clean_start = args.clean_start

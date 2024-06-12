@@ -90,7 +90,7 @@ def run_isoquant(args, config_dict):
         if os.path.exists(output_folder):
             shutil.rmtree(output_folder)
         os.makedirs(output_folder)
-        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "isoquant.py"), "-o", output_folder, "--resume"]
+        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "splisoquant.py"), "-o", output_folder, "--resume"]
         src_dir = fix_path(config_file, config_dict["resume"])
         for f in os.listdir(src_dir):
             fpath = os.path.join(src_dir, f)
@@ -104,7 +104,7 @@ def run_isoquant(args, config_dict):
         config_dict["label"] = run_name
 
         log.info('== Running IsoQuant ==')
-        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "isoquant.py"), "-o", output_folder,
+        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "splisoquant.py"), "-o", output_folder,
                                  "-r", genome, "-d", config_dict["datatype"], "-p", run_name]
         if genedb:
             isoquant_command_list += ["--genedb", genedb]
