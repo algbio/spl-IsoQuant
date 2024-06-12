@@ -142,7 +142,7 @@ def parse_args(cmd_args=None, namespace=None):
     # SC ARGUMENTS
     sc_args_group.add_argument("--mode", "-m", type=str, choices=ISOQUANT_MODES,
                                help="IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
-                                    "; default:%s" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
+                                    "; default:%s" % IsoQuantMode.double.name, default=IsoQuantMode.double.name)
     sc_args_group.add_argument('--barcode_whitelist', type=str,
                                help='file with barcode whitelist for barcode calling')
     sc_args_group.add_argument("--barcoded_reads", type=str, nargs='+',
@@ -210,7 +210,7 @@ def parse_args(cmd_args=None, namespace=None):
                                    help='Do not use previously generated index, feature db or alignments.')
 
     add_additional_option_to_group(pipeline_args_group, "--no_model_construction", action="store_true",
-                                   default=False, help="run only read assignment and quantification")
+                                   default=True, help="run only read assignment and quantification")
     add_additional_option_to_group(pipeline_args_group, "--run_aligner_only", action="store_true", default=False,
                                    help="align reads to reference without running further analysis")
 

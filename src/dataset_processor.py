@@ -58,10 +58,10 @@ logger = logging.getLogger('IsoQuant')
 class IsoQuantMode(Enum):
     bulk = 1
     tenX = 2
-    double = 3
+    spatial = 3
 
 
-ISOQUANT_MODES = [IsoQuantMode.bulk.name, IsoQuantMode.tenX.name, IsoQuantMode.double.name]
+ISOQUANT_MODES = [IsoQuantMode.bulk.name, IsoQuantMode.tenX.name, IsoQuantMode.spatial.name]
 
 
 def reads_collected_lock_file_name(sample_out_raw, chr_id):
@@ -363,7 +363,7 @@ class ReadAssignmentAggregator:
                 read_groups=self.read_groups, output_zeroes=False)
             self.transcript_model_global_counter.add_counters([self.transcript_model_grouped_counter])
 
-        if args.mode in [IsoQuantMode.double, IsoQuantMode.tenX]:
+        if args.mode in [IsoQuantMode.spatial, IsoQuantMode.tenX]:
             pass
 
     def finalize_aggregators(self, sample):
