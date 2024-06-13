@@ -287,6 +287,17 @@ To run Spl-IsoQuant on a simple Spl-Iso-Seq dataset provided within the package,
 
 Typically, this test takes no more than a few minutes.
 
+As a result, in the `splisoseq_test/TEST` folder you will get the following files:
+
+* `TEST_DATA.barcoded_reads_0.tsv` - detected barcodes;
+* `TEST_DATA.UMI_filteredED2.UMI_filtered.allinfo` - PCR deduplicated reads with barcodes and gene assignemts;
+* `TEST_DATA.UMI_filteredED2.UMI_filtered.reads.tsv` - list of PCR deduplicated read idsl
+* `TEST_DATA.UMI_filteredED2.stats.tsv` - bried stats for PCR deduplication and read assignments;
+* `TEST_DATA.read_assignments.tsv.gz` - read-to-isoform assignments; 
+* `TEST_DATA.corrected_reads.bed.gz` - read alignments after splice site correction;
+* `TEST_DATA.gene_counts.tsv, TEST_DATA.gene_tpm.tsv` - bulk gene counts/TPMs;
+* `TEST_DATA.transcript_counts.tsv, TEST_DATA.transcript_tpm.tsv` - bulk gene counts/TPMs;
+* `aux/TEST_DATA_ONT_798f05_d91ab7_5b7995.bam` - aligner reads.
 
 <a name="sec3.3"></a>
 ## Spl-IsoQuant output
