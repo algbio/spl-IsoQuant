@@ -25,11 +25,11 @@ cp -r ./tests $TARGET_DIR/
 cp -r ./figs $TARGET_DIR/
 
 
-cp isoquant.py $TARGET_DIR/
+cp splisoquant.py $TARGET_DIR/
 cp README.md $TARGET_DIR/
 cp VERSION $TARGET_DIR/
 cp LICENSE $TARGET_DIR/
-cp changelog.html $TARGET_DIR/
+cp changelog.md $TARGET_DIR/
 cp requirements.txt $TARGET_DIR/
 
 tar -pczf $TARGET_DIR.tar.gz $TARGET_DIR
