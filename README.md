@@ -17,23 +17,23 @@ Spl-IsoQuant is a forked version of [IsoQuant](https://github.com/ablab/IsoQuant
 
 *   Verify your installation by running:
 
-        isoquant.py --test
+        splisoquant.py --test
 
 *   To run IsoQuant on raw FASTQ/FASTA files use the following command
 
-        isoquant.py --reference /PATH/TO/reference_genome.fasta \
+        splisoquant.py --reference /PATH/TO/reference_genome.fasta \
         --genedb /PATH/TO/gene_annotation.gtf \
         --fastq /PATH/TO/data.fastq.gz \
         --barcode_whitelist /PATH/TO/barcodes.tsv \
         --data_type (pacbio_ccs|nanopore) -o OUTPUT_FOLDER
 
 
-For example, using the toy data provided within this repository,
+For example, using the toy data provided within this repository
 
-        ./isoquant.py --reference tests/toy_data/MAPT.Mouse.reference.fasta \
-        --genedb tests/toy_data/MAPT.Mouse.genedb.gtf \
-        --fastq tests/toy_data/MAPT.Mouse.ONT.simulated.fastq \
-        --data_type nanopore -o toy_data_out
+        splisoquant.py --reference tests/splisoseq/GRCh38.chrX.fa.gz \
+        --genedb tests/splisoseq/ref.gtf --complete_genedb \
+        --fastq tests/splisoseq/ONT.fasta.gz --barcode_whitelist tests/splisoseq/barcodes.tsv.gz \
+        -d ont -p TEST -o splisoseq_test
 
 
 <a name="sec1"></a>
@@ -71,7 +71,7 @@ Pre-constructed aligner index can also be provided to increase mapping time.
 
 <a name="sec2"></a>
 # Installation
-IsoQuant requires a 64-bit Linux system or Mac OS and Python (3.8 and higher) to be pre-installed on it.
+Spl-IsoQuant requires a 64-bit Linux system or Mac OS and Python (3.8 and higher) to be pre-installed on it.
 You will also need
 * [gffutils](https://pythonhosted.org/gffutils/installation.html)
 * [pysam](https://pysam.readthedocs.io/en/latest/index.html)
@@ -104,29 +104,29 @@ Alternatively, you can install all dependencies via conda by installing original
 conda create -c conda-forge -c bioconda -n isoquant python=3.8 isoquant
 ```
 
-Typical installation should take no more than a few minutes.
+Typical installation takes no more than a few minutes.
 
 <a name="sec2.3"></a>
 ## Verifying your installation
-To verify IsoQuant installation type
+To verify Spl-IsoQuant installation type
 ```bash
 splisoquant.py --test
 ```
 to run on toy dataset.  
 If the installation is successful, you will find the following information at the end of the log:
 ```bash
-=== IsoQuant pipeline finished ===
+=== Spl-IsoQuant pipeline finished ===
 === TEST PASSED CORRECTLY ===
 ```
 
-Running on the test data should not require more than a few minutes.
+Running on the test data requires no more than a few minutes.
 
 
 <a name="sec3"></a>
-# Running IsoQuant
+# Running Spl-IsoQuant
 <a name="sec3.1"></a>
-## IsoQuant input
-To run IsoQuant, you should provide:
+## Spl-IsoQuant input
+To run Spl-IsoQuant, you should provide:
 * Long RNA reads (PacBio or Oxford Nanopore) in one of the following formats:
   * FASTA/FASTQ (can be gzipped);
   * Sorted and indexed BAM;
@@ -139,7 +139,7 @@ To run IsoQuant, you should provide:
 
 Two main options are `--fastq` and `--bam` (see description below). Both options accept one or multiple files separated by space.
 All provided files are treated as a single experiment, which means a single combined GTF will
-be generated. If multiple files are provided, IsoQuant will compute tables with each column
+be generated. If multiple files are provided, Spl-IsoQuant will compute tables with each column
 corresponding to an individual file (per-sample counts).
 To set a specific label for each sample use the `--label` option. Number of labels must be equal to the number of files.
 To a set a prefix for the output files use the `--prefix` option.
@@ -163,11 +163,8 @@ reference annotation database.
 `--help` (or `-h`)
     Prints help message.
 
-`--full_help`
-    Prints all available options (including hidden ones).
-
 `--test`
-    Runs IsoQuant on the toy data set.   
+    Runs Spl-IsoQuant on the toy data set.   
 
 
 ### Input options
@@ -204,6 +201,18 @@ expression tables with "per-file" columns will be computed. See more about [inpu
 expression tables with "per-file" columns will be computed. See more about [input data](#sec3.1).
 
 
+`--barcode_whitelist`
+    A file with a list of possible barcodes (one per line).
+
+`--barcoded_reads`
+    A TSV files containing read ids in the first column and their corresponding barcodes in the second column.
+    Column that contains the barcodes can be modified using `--barcode_column`. Column indices start from 0.
+
+`--barcode_column`
+    A index of the column that contains barcodes in the TSV file specified by the `--barcoded_reads` (default is 1).
+    Column indices are 0-based.
+
+
 #### Other input options:
 `--stranded`
     Reads strandness type, supported values are: `forward`, `reverse`, `none`.
@@ -225,7 +234,7 @@ Input file names are used as labels if not set.
 `--resume`
     Resume a previously unfinished run. Output folder with previous run must be specified.
     Allowed options are `--threads` and `--debug`, other options cannot be changed.
-    IsoQuant will run from the beginning if the output folder does not contain the previous run.
+    Spl-IsoQuant will run from the beginning if the output folder does not contain the previous run.
 
 `--force`
     force to overwrite the folder with previous run.
@@ -238,11 +247,8 @@ Input file names are used as labels if not set.
 
 
 
-
-
 ### Hidden options
 <a name="hidden"></a>
-Options below are shown only with `--full_help` option.
 We recommend _not_ to modify these options unless you are clearly aware of their effect.
 
 `--no_gzip`
@@ -254,18 +260,6 @@ We recommend _not_ to modify these options unless you are clearly aware of their
 `--no_secondary`
     Ignore secondary alignments.
 
-`--aligner`
-    Force to use this alignment method, can be `starlong` or `minimap2`; `minimap2` is currently used as default. Make sure the specified aligner is in the `$PATH` variable.
-
-`--no_junc_bed`
-    Do not use gene annotation for read mapping.
-
-`--junc_bed_file`
-    Annotation in BED12 format produced by `paftools.js gff2bed` (can be found in `minimap2`), will be created automatically if not given.
-
-`--delta`
-    Delta for inexact splice junction comparison, chosen automatically based on data type (e.g. 4bp for PacBio, 6pb for ONT).
-
 `--genedb_output`
     If your output folder is located on a shared storage (e.g. NFS share), use this option to set another path
     for storing the annotation database, because SQLite database cannot be created on a shared disks.
@@ -276,191 +270,40 @@ We recommend _not_ to modify these options unless you are clearly aware of their
 but may improve running time when disk I/O is relatively slow.
 
 
-### Examples
-<a name="examples"></a>
+### Example
 
-* Mapped PacBio CCS reads in BAM format; pre-converted gene annotation:
+To run Spl-IsoQuant on a simple Spl-Iso-Seq dataset provided within the package, run
 
-```bash
-splisoquant.py -d pacbio_ccs --bam mapped_reads.bam \
- --genedb annotation.db --output output_dir
-```
+        splisoquant.py --reference tests/splisoseq/GRCh38.chrX.fa.gz \
+        --genedb tests/splisoseq/ref.gtf --complete_genedb \
+        --fastq tests/splisoseq/ONT.fasta.gz --barcode_whitelist tests/splisoseq/barcodes.tsv.gz \
+        -d ont -p TEST -o splisoseq_test
 
-* Nanopore dRNA stranded reads; official annotation in GTF format, use custon prefix for output:
-```bash
-splisoquant.py -d nanopore --stranded forward --fastq ONT.raw.fastq.gz \
- --reference reference.fasta --genedb annotation.gtf --complete_genedb \
- --output output_dir --prefix My_ONT
-```
-
-* Nanopore cDNA reads; no reference annotation:
-```bash
-splisoquant.py -d nanopore --fastq ONT.cDNA.raw.fastq.gz \
- --reference reference.fasta --output output_dir --prefix My_ONT_cDNA
-```
-
-* PacBio FL reads; custom annotation in GTF format, which contains only exon features:
-```bash
-splisoquant.py -d pacbio_ccs --fl_data --fastq CCS.fastq \
- --reference reference.fasta --genedb genes.gtf --output output_dir
-```
-
-* Nanopore cDNA reads, multiple samples/replicas within a single experiment; official annotation in GTF format:
-```bash
-splisoquant.py -d nanopore --bam ONT.cDNA_1.bam ONT.cDNA_2.bam ONT.cDNA_3.bam \
- --reference reference.fasta --genedb annotation.gtf --complete_genedb --output output_dir
- --predix ONT_3samples --labels A1 A2 A3
-```
-
-* ONT cDNA reads; 2 experiments with 3 replicates; official annotation in GTF format:
-```bash
-splisoquant.py -d nanopore --yaml dataset.yaml  \
- --complete_genedb --genedb genes.gtf \
- --reference reference.fasta --output output_dir
-```
-
-dataset.yaml file :
-
-```
-[
-  data format: "fastq",
-  {
-    name: "Experiment1",
-    long read files: [
-      "/PATH/TO/SAMPLE1/file1.fastq",
-      "/PATH/TO/SAMPLE1/file2.fastq",
-      "/PATH/TO/SAMPLE1/file3.fastq"
-    ],
-    labels: [
-      "Replicate1",
-      "Replicate2",
-      "Replicate3"
-    ]
-  },
-  {
-    name: "Experiment1",
-    long read files: [
-      "/PATH/TO/SAMPLE2/file1.fastq",
-      "/PATH/TO/SAMPLE2/file2.fastq",
-      "/PATH/TO/SAMPLE2/file3.fastq"
-    ],
-    labels: [
-      "Replicate1",
-      "Replicate2",
-      "Replicate3"
-    ]
-  }
-]
-
-```
-
-
-IsoQuant will produce 2 sets of resulting files (including annotations and expression tables), one for each experiment.
-Output sub-folder will be named `Experiment1` and `Experiment2`.
-Expression tables will have columns "Replicate1", "Replicate2" and "Replicate3".
-
-
-* ONT cDNA reads; 1 experiment with 2 replicates, each replicate has 2 files; official annotation in GTF format:
-```bash
-splisoquant.py -d nanopore --yaml dataset.yaml  \
-  --complete_genedb --genedb genes.gtf \
- --reference reference.fasta --prefix MY_SAMPLE \
- --output output_dir  
-```
-
-dataset.yaml file :
-
-
-```
-[
-  data format: "fastq",
-  {
-    name: "Experiment1",
-    long read files: [
-      "/PATH/TO/SAMPLE1/file1.fastq",
-      "/PATH/TO/SAMPLE1/file2.fastq",
-      "/PATH/TO/SAMPLE1/file3.fastq",
-      "/PATH/TO/SAMPLE1/file3.fastq"
-    ],
-    labels: [
-      "Replicate1",
-      "Replicate1",
-      "Replicate2",
-      "Replicate2"
-    ]
-  }
-]
-
-```
-
-
-IsoQuant will produce one output sub-folder `Experiment1`.
-Expression tables will have columns "Replicate1" and "Replicate2".
-Files having identical labels will be treated as a single replica (and thus the counts will be combined).
+Typically, this test takes no more than a few minutes.
 
 
 <a name="sec3.3"></a>
-## IsoQuant output
+## Spl-IsoQuant output
 
 ### Output files
 
-IsoQuant output files will be stored in `<output_dir>`, which is set by the user.
+Spl-IsoQuant output files will be stored in `<output_dir>`, which is set by the user.
 If the output directory was not specified the files are stored in `isoquant_output`.
 
-IsoQuant consists of two stages, which generate its own output:
-1. Reference-based analysis. Runs only if reference annotation is provided. Performs read-to-isofrom assignment,
-splice site correction and abundance quantification for reference genes/transcripts.
-2. Transcript discovery. Reconstructs transcript models and performs abundance quantification for discovered isoforms.
+Output files are:
 
-#### Reference-based analysis output
-
-_Will be produced only if a reference gene annotation is provided._
-
+* `SAMPLE_ID.barcoded_reads_#.tsv` - TSV files containing read ids, their respective barcodes and UMIs. A separate files is produced for every input files with reads.
 * `SAMPLE_ID.read_assignments.tsv.gz` - TSV file with read to isoform assignments (gzipped by default);
 * `SAMPLE_ID.corrected_reads.bed.gz` - BED file with corrected read alignments (gzipped by default);
 * `SAMPLE_ID.transcript_tpm.tsv` - TSV file with reference transcript expression in TPM;
 * `SAMPLE_ID.transcript_counts.tsv` - TSV file with raw read counts for reference transcript;
 * `SAMPLE_ID.gene_tpm.tsv` - TSV file with reference gene expression in TPM;
 * `SAMPLE_ID.gene_counts.tsv` - TSV file with raw read counts for reference genes;
+* `SAMPLE_ID.UMI_filteredED2.UMI_filtered.allinfo` - a TSV files reads kept after PCR deduplication.
+   It contains all necessary information for downstream Spl-Iso-Seq data analysis, such assigned gene, transcript, barcode, UMI etc.
+* `SAMPLE_ID.UMI_filteredED2.UMI_filtered.reads.tsv` - same as above, but contains only read ids.
+* `SAMPLE_ID.UMI_filteredED2.stats.tsv` - brief statistics for the PCD deduplication and the resulting TSV files. 
 
-If `--sqanti_output` is set, IsoQuant will produce output in [SQANTI](https://github.com/ConesaLab/SQANTI3)-like format:
-* `SAMPLE_ID.novel_vs_known.SQANTI-like.tsv` - discovered novel transcripts vs reference transcripts (similar, but not identical to SQANTI `classification.txt`);
-
-If `--count_exons` is set, exon and intron counts will be produced:
-* `SAMPLE_ID.exon_counts.tsv` - reference exon inclusion/exclusion read counts;
-* `SAMPLE_ID.intron_counts.tsv` - reference intron inclusion/exclusion read counts;
-
-If `--read_group` is set, the per-group expression values for reference features will be also computed:
-* `SAMPLE_ID.gene_grouped_tpm.tsv`
-* `SAMPLE_ID.transcript_grouped_tpm.tsv`
-* `SAMPLE_ID.gene_grouped_counts.tsv`
-* `SAMPLE_ID.transcript_grouped_counts.tsv`
-* `SAMPLE_ID.exon_grouped_counts.tsv`
-* `SAMPLE_ID.intron_grouped_counts.tsv`
-
-#### Transcript discovery output
-
-_Will not be produced if `--no_model_construction` is set._
-
-File names typically contain `transcript_model` in their name.
-
-* `SAMPLE_ID.transcript_models.gtf` - GTF file with discovered expressed transcript (both known and novel transcripts);
-* `SAMPLE_ID.transcript_model_reads.tsv.gz` - TSV file indicating which reads contributed to transcript models (gzipped by default);
-* `SAMPLE_ID.transcript_model_tpm.tsv` - expression of discovered transcripts models in TPM (corresponds to `SAMPLE_ID.transcript_models.gtf`);
-* `SAMPLE_ID.transcript_model_counts.tsv` - raw read counts for discovered transcript models (corresponds to `SAMPLE_ID.transcript_models.gtf`);
-* `SAMPLE_ID.extended_annotation.gtf` - GTF file with the entire reference annotation plus all discovered novel transcripts;
-
-
-If `--read_group` is set, the per-group counts for discovered transcripts will be also computed:
-* `SAMPLE_ID.transcript_model_grouped_counts.tsv`
-* `SAMPLE_ID.transcript_model_grouped_tpm.tsv`
-
-
-If multiple experiments are provided, aggregated expression matrices will be placed in `<output_dir>`:
-* `combined_gene_counts.tsv`
-* `combined_gene_tpm.tsv`
-* `combined_transcript_counts.tsv`
-* `combined_transcript_tpm.tsv`
 
 Additionally, a log file will be saved to the directory.  
 * <output_dir>/isoquant.log   
@@ -471,6 +314,34 @@ In case `--keep_tmp` option was specified this directory will also contain tempo
 ### Output file formats
 
 Although most output files include headers that describe the data, a brief explanation of the output files is provided below.
+
+#### Detected barcodes
+* `read_id` - read id;
+* `barcode` - detected barcode sequence, `*` if not detected;
+* `UMI` - detected UMI sequence, `*` if not detected;
+* `BC_score` - barcode alignemnt score, `-1` if not detected;
+* `valid_UMI` - indicates whether UMI has the length similar to expected and has non-T nucleoties at the end (True/False);
+* `strand` - read strand (+/-/.)
+* `polyT_start` - start position of the poly-T tail (`-1` if not detected);
+* `primer_end` - end position of the primer (`-1` if not detected);
+* `linker_start` - start position of the linker splitting the barcodes (`-1` if not detected);
+* `linker_end` - end position of the linker splitting the barcodes (`-1` if not detected);
+
+#### UMI-filtered reads
+
+* `read_id` - read id;
+* `gene_id` - assigned gene id;
+* `cell_type` - assigned cell type (None if not assigned);
+* `barcode` - detected barcode sequence;
+* `UMI` - detected UMI sequence;
+* `exons` - exon coordinates;
+* `TSS` - transcript start position;
+* `TES` - transcript end position;
+* `intons` - intron coordinates;
+* `transcript_type` - transcript type (known/novel);
+* `exon_num` - number of exons;
+* `transcript_id` - assigned transcript id;
+* `transcript_type` - transcript type derived from the gene annotation;
 
 #### Read to isoform assignment
 
@@ -559,7 +430,7 @@ The manuscript is currently under preparation.
 
 <a name="sec5"></a>
 ## Feedback and bug reports
-Your comments, bug reports, and suggestions are very welcome. They will help us to further improve IsoQuant. If you have any troubles running IsoQuant, please send us `isoquant.log` from the `<output_dir>` directory.
+Your comments, bug reports, and suggestions are very welcome. They will help us to further improve Spl-IsoQuant. If you have any troubles running Spl-IsoQuant, please send us `isoquant.log` from the `<output_dir>` directory.
 
 You can leave your comments and bug reports at our [GitHub repository tracker](https://github.com/algbio/spl-IsoQuant/).
 

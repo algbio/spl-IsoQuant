@@ -119,13 +119,13 @@ def parse_args(cmd_args=None, namespace=None):
     add_additional_option_to_group(input_args,'--fastq_list', type=str,
                                    help='text file with list of FASTQ files, one file per line, '
                                         'leave empty line between samples')
-    input_args.add_argument('--yaml', type=str, help='yaml file containing all input files, one entry per sample'
+    add_additional_option_to_group(input_args, '--yaml', type=str, help='yaml file containing all input files, one entry per sample'
                                                      ', check readme for format info')
 
-    input_args_group.add_argument('--illumina_bam', nargs='+', type=str,
+    add_additional_option_to_group(input_args_group, '--illumina_bam', nargs='+', type=str,
                                   help='sorted and indexed file(s) with Illumina reads from the same sample')
 
-    input_args_group.add_argument("--read_group", help="a way to group feature counts (no grouping by default): "
+    add_additional_option_to_group(input_args_group, "--read_group", help="a way to group feature counts (no grouping by default): "
                                              "by BAM file tag (tag:TAG); "
                                              "using additional file (file:FILE:READ_COL:GROUP_COL:DELIM); "
                                              "using read id (read_id:DELIM); "
@@ -140,7 +140,7 @@ def parse_args(cmd_args=None, namespace=None):
                         help="reads represent FL transcripts; both ends of the read are considered to be reliable")
 
     # SC ARGUMENTS
-    sc_args_group.add_argument("--mode", "-m", type=str, choices=ISOQUANT_MODES,
+    add_additional_option_to_group(sc_args_group, "--mode", "-m", type=str, choices=ISOQUANT_MODES,
                                help="IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
                                     "; default:%s" % IsoQuantMode.spatial.name, default=IsoQuantMode.spatial.name)
     sc_args_group.add_argument('--barcode_whitelist', type=str,
@@ -260,7 +260,7 @@ def parse_args(cmd_args=None, namespace=None):
     add_hidden_option("--cage-shift", type=int, default=50, help="interval before read start to look for CAGE peak")
     parser.add_argument("--test", action=TestMode, nargs=0, help="run IsoQuant on toy dataset")
 
-    isoquant_version = "3.2.0"
+    isoquant_version = "3.4.0"
     try:
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "VERSION")) as version_f:
             isoquant_version = version_f.readline().strip()
@@ -806,7 +806,7 @@ def filter_umis(args):
 
 
 def run_pipeline(args):
-    logger.info(" === IsoQuant pipeline started === ")
+    logger.info(" === Spl-IsoQuant pipeline started === ")
     logger.info("gffutils version: %s" % gffutils.__version__)
     logger.info("pysam version: %s" % pysam.__version__)
     logger.info("pyfaidx version: %s" % pyfaidx.__version__)
@@ -839,13 +839,13 @@ def run_pipeline(args):
     if args.mode in [IsoQuantMode.spatial, IsoQuantMode.tenX]:
         filter_umis(args)
 
-    logger.info(" === IsoQuant pipeline finished === ")
+    logger.info(" === Spl-IsoQuant pipeline finished === ")
 
 
 # Test mode is triggered by --test option
 class TestMode(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        out_dir = 'isoquant_test'
+        out_dir = 'splisoquant_test'
         if os.path.exists(out_dir):
             shutil.rmtree(out_dir)
         source_dir = os.path.dirname(os.path.realpath(__file__))
@@ -853,7 +853,7 @@ class TestMode(argparse.Action):
         options = ['--output', out_dir, '--threads', '4',
                    '--fastq', os.path.join(source_dir, 'tests/splisoseq/ONT.fasta.gz'),
                    '--reference', os.path.join(source_dir, 'tests/splisoseq/GRCh38.chrX.fa.gz'),
-                   '--genedb', os.path.join(source_dir, 'tests/splisoseq/ref.gtf '),
+                   '--genedb', os.path.join(source_dir, 'tests/splisoseq/ref.gtf'),
                    '--barcode_whitelist',  os.path.join(source_dir, 'tests/splisoseq/barcodes.tsv.gz'),
                    '--clean_start', '--data_type', 'nanopore', '--complete_genedb', '--force', '-p', 'TEST_DATA']
         print('=== Running in test mode === ')
@@ -868,7 +868,7 @@ class TestMode(argparse.Action):
 
     @staticmethod
     def _check_log():
-        with open('isoquant_test/isoquant.log', 'r') as f:
+        with open('splisoquant_test/isoquant.log', 'r') as f:
             log = f.read()
 
         correct_results = ['unique: 1', 'Processed 1 sample']
@@ -898,12 +898,12 @@ if __name__ == "__main__":
             print_exc(file=strout)
             s = strout.getvalue()
             if s:
-                logger.critical("IsoQuant failed with the following error, please, submit this issue to "
-                                "https://github.com/ablab/IsoQuant/issues" + s)
+                logger.critical("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                                "https://github.com/algbio/spl-IsoQuant/issues" + s)
             else:
                 print_exc()
         else:
-            sys.stderr.write("IsoQuant failed with the following error, please, submit this issue to "
-                             "https://github.com/ablab/IsoQuant/issues")
+            sys.stderr.write("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                             "https://github.com/algbio/spl-IsoQuant/issues")
             print_exc()
         sys.exit(-1)
