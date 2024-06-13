@@ -72,6 +72,8 @@ Pre-constructed aligner index can also be provided to increase mapping time.
 <a name="sec2"></a>
 # Installation
 Spl-IsoQuant requires a 64-bit Linux system or Mac OS and Python (3.8 and higher) to be pre-installed on it.
+There are no specific hardware requirements.
+
 You will also need
 * [gffutils](https://pythonhosted.org/gffutils/installation.html)
 * [pysam](https://pysam.readthedocs.io/en/latest/index.html)
@@ -97,9 +99,13 @@ Install requirements:
 ```bash
 pip install -r requirements.txt
 ```
-You also need [samtools](http://www.htslib.org/download/) and [minimap2](https://github.com/lh3/minimap2) to be in the `$PATH` variable.
-
+You also need [samtools 1.14+](http://www.htslib.org/download/) and [minimap2 2.18+](https://github.com/lh3/minimap2) to be in the `$PATH` variable.
 Alternatively, you can install all dependencies via conda by installing original IsoQuant:
+
+Spl-IsoQuant was tested with version given in the `requirements.txt`.
+It was also tested with minimap2 2.18, 2.22 and 2.24, samtools 1.14. 
+
+
 ```
 conda create -c conda-forge -c bioconda -n isoquant python=3.8 isoquant
 ```
