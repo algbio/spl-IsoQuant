@@ -30,7 +30,7 @@ from src.barcode_calling.barcode_callers import (
 logger = logging.getLogger('IsoQuant')
 
 
-READ_CHUNK_SIZE = 100000
+READ_CHUNK_SIZE = 1000
 BARCODE_CALLING_MODES = {'tenX': TenXBarcodeDetector,
                          'spatial': DoubleBarcodeDetector}
 
@@ -227,6 +227,8 @@ def process_in_parallel(args):
         while reads_left:
             completed_features, _ = concurrent.futures.wait(future_results, return_when=concurrent.futures.FIRST_COMPLETED)
             for c in completed_features:
+                if c.exception() is not None:
+                    raise c.exception()
                 future_results.remove(c)
                 output_files.append(c.result())
                 if reads_left:
@@ -239,6 +241,8 @@ def process_in_parallel(args):
 
         completed_features, _ = concurrent.futures.wait(future_results, return_when=concurrent.futures.ALL_COMPLETED)
         for c in completed_features:
+            if c.exception() is not None:
+                raise c.exception()
             output_files.append(c.result())
 
     outf = open(args.output, "w")
