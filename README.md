@@ -54,6 +54,8 @@ It also supports bulk long-read data.
 Reads must be provided in FASTQ or FASTA format (can be gzipped). If you have already aligned your reads to the reference genome,
 simply provide sorted and indexed BAM files.
 
+IsoQuant can also take aligned Illumina reads to correct long-read spliced alignments. However, short reads are _not_
+used to discover transcript models or compute abundances.
 
 <a name="sec1.2"></a>
 ## Supported reference data
@@ -152,7 +154,6 @@ To a set a prefix for the output files use the `--prefix` option.
 
 This pipeline is typical for the cases when a user is
 interested in comparing expression between different replicas/conditions within the same experiment.
-
 
 
 <a name="sec3.2"></a>
@@ -432,11 +433,6 @@ Tab-separated values, the columns are:
 * `TPM` or `count` - expression value (float).
 
 For grouped counts, each column contains expression values of a respective group.
-In the number of groups exceeds 10, file will contain 3 columns:
-
-* `feature_id` - genomic feature ID;
-* `group_id` - name of the assigned group;
-* `TPM` or `count` - expression value (float).
 
 
 

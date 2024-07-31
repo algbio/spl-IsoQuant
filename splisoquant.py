@@ -18,6 +18,7 @@ import time
 from collections import namedtuple
 from io import StringIO
 from traceback import print_exc
+from multiprocessing import Process
 
 import pysam
 import gffutils
@@ -40,7 +41,7 @@ from src.long_read_counter import COUNTING_STRATEGIES, CountingStrategy, Normali
 from src.input_data_storage import InputDataStorage
 from src.multimap_resolver import MultimapResolvingStrategy
 from src.stats import combine_counts
-from src.detect_barcodes import process_single_thread, process_in_parallel
+from detect_barcodes import process_single_thread, process_in_parallel
 from src.barcode_calling.umi_filtering import UMIFilter, create_transcript_type_dict, load_barcodes
 
 
@@ -778,9 +779,16 @@ def call_barcodes(args):
                 bc_args = BarcodeCallingArgs(files[0], args.barcode_whitelist, args.mode.name,
                                              output_barcodes, sample.aux_dir, args.threads)
                 if args.threads == 1:
-                    process_single_thread(bc_args)
+                    process = Process(target=process_single_thread, args=(bc_args,))
                 else:
-                    process_in_parallel(bc_args)
+                    process = Process(target=process_in_parallel, args=(bc_args,))
+                # Launching barcode calling in a separate process has the following reason:
+                # Read chunks are not cleared by the GC in the end of barcode calling, leaving the main
+                # IsoQuant process to consume ~2,5 GB even when barcode calling is done.
+                # Once 16 child processes are created later, IsoQuant instantly takes threads x 2,5 GB for nothing.
+                process.start()
+                logger.info("Detecting barcodes")
+                process.join()
             args.input_data.samples[0].barcoded_reads.append(output_barcodes)
     else:
         args.input_data.samples[0].barcoded_reads = args.barcoded_reads
@@ -871,7 +879,7 @@ class TestMode(argparse.Action):
         with open('splisoquant_test/isoquant.log', 'r') as f:
             log = f.read()
 
-        correct_results = ['unique: 1', 'Processed 1 sample']
+        correct_results = ['unique: 1', 'Processed 1']
         return all([result in log for result in correct_results])
 
 
