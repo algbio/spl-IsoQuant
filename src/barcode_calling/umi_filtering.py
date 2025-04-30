@@ -298,7 +298,7 @@ class UMIFilter:
             if assigned and barcoded:
                 self.unique_gene_barcode.add((read_infos[0].gene_id, read_infos[0].barcode))
 
-    def process(self, assignment_file, output_prefix, transcript_type_dict):
+    def process(self, assignment_file, output_prefix, transcript_type_dict, read_subset=None):
         self.ambiguous_type = 0
         self.ambiguous_polya = 0
         self.inconsistent_assignments = 0
@@ -323,10 +323,13 @@ class UMIFilter:
         else:
             logger.critical("Read assignment file is not found")
             exit(-1)
+
         for l in handle:
             if l.startswith("#"): continue
             v = l.strip().split("\t")
             read_id = v[0]
+            if read_subset and read_id not in read_subset:
+                continue
             chr_id = v[1]
             gene_id = v[4]
             transcript_id = v[3]

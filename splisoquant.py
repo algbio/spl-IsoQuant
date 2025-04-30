@@ -8,6 +8,7 @@
 ############################################################################
 import argparse
 import glob
+import gzip
 import json
 import logging
 import os.path
@@ -809,13 +810,31 @@ def filter_umis(args):
         transcript_type_dict = {}
 
     barcode_umi_dict = load_barcodes(args.input_data.samples[0].barcoded_reads, False)
-    for d in {2}:
-        logger.info("== Filtering by UMIs with edit distance %d ==" % d)
-        output_prefix = args.input_data.samples[0].out_umi_filtered + (".ALL" if d < 0 else "ED%d" % d)
-        logger.info("Results will be saved to %s" % output_prefix)
-        umi_filter = UMIFilter(barcode_umi_dict, d)
-        umi_filter.process(args.input_data.samples[0].out_assigned_tsv, output_prefix, transcript_type_dict)
-        logger.info("== Done filtering by UMIs with edit distance %d ==" % d)
+
+    if os.path.exists(args.input_data.samples[0].out_assigned_tsv):
+        handle = open(args.input_data.samples[0].out_assigned_tsv, 'r')
+    elif os.path.exists(args.input_data.samples[0].out_assigned_tsv + ".gz"):
+        handle = gzip.open(args.input_data.samples[0].out_assigned_tsv + ".gz", "rt")
+    else:
+        logger.critical("Read assignment file is not found")
+        exit(-1)
+
+    read_ids = set()
+    for l in handle:
+        if l.startswith("#"): continue
+        read_ids.add(l.split('\t')[0])
+    read_ids = list(read_ids)
+
+    for fraction in [0.1 * i for i in range(1, 11)]:
+        total_reads_to_use = int(fraction * len(read_ids))
+        read_subset = set(read_ids[:total_reads_to_use])
+        for d in {2}:
+            logger.info("== Filtering by UMIs with edit distance %d ==" % d)
+            output_prefix = args.input_data.samples[0].out_umi_filtered + (".ALL" if d < 0 else "ED%d" % d) + ("_%.1f" % fraction)
+            logger.info("Results will be saved to %s" % output_prefix)
+            umi_filter = UMIFilter(barcode_umi_dict, d)
+            umi_filter.process(args.input_data.samples[0].out_assigned_tsv, output_prefix, transcript_type_dict)
+            logger.info("== Done filtering by UMIs with edit distance %d ==" % d)
 
 
 def run_pipeline(args):
