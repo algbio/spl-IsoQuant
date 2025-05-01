@@ -833,7 +833,7 @@ def filter_umis(args):
             output_prefix = args.input_data.samples[0].out_umi_filtered + (".ALL" if d < 0 else "ED%d" % d) + ("_%.1f" % fraction)
             logger.info("Results will be saved to %s" % output_prefix)
             umi_filter = UMIFilter(barcode_umi_dict, d)
-            umi_filter.process(args.input_data.samples[0].out_assigned_tsv, output_prefix, transcript_type_dict)
+            umi_filter.process(args.input_data.samples[0].out_assigned_tsv, output_prefix, transcript_type_dict, read_subset)
             logger.info("== Done filtering by UMIs with edit distance %d ==" % d)
 
 
