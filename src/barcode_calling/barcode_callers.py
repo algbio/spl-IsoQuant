@@ -7,10 +7,17 @@
 import logging
 from collections import defaultdict
 
-from .kmer_indexer import KmerIndexer, ArrayKmerIndexer
-from .common import find_polyt_start, reverese_complement, find_candidate_with_max_score_ssw, detect_exact_positions
+from .kmer_indexer import KmerIndexer, ArrayKmerIndexer, Array2BitKmerIndexer
+from .common import find_polyt_start, reverese_complement, find_candidate_with_max_score_ssw, detect_exact_positions, \
+    detect_first_exact_positions, str_to_2bit
 
 logger = logging.getLogger('IsoQuant')
+
+
+def increase_if_valid(val, delta):
+    if val and val != -1:
+        return val + delta
+    return val
 
 
 class BarcodeDetectionResult:
@@ -26,6 +33,9 @@ class BarcodeDetectionResult:
 
     def is_valid(self):
         return self.barcode != BarcodeDetectionResult.NOSEQ
+
+    def update_coordinates(self, delta):
+        pass
 
     def more_informative_than(self, that):
         raise NotImplemented()
@@ -58,14 +68,20 @@ class DoubleBarcodeDetectionResult(BarcodeDetectionResult):
     def is_valid(self):
         return self.barcode != BarcodeDetectionResult.NOSEQ
 
+    def update_coordinates(self, delta):
+        self.primer = increase_if_valid(self.primer, delta)
+        self.linker_start = increase_if_valid(self.linker_start, delta)
+        self.linker_end = increase_if_valid(self.linker_end, delta)
+        self.polyT = increase_if_valid(self.polyT, delta)
+
     def more_informative_than(self, that):
-        if self.polyT != that.polyT:
-            return self.polyT > that.polyT
-        if self.primer != that.primer:
-            return self.primer > that.primer
+        if self.BC_score != that.BC_score:
+            return self.BC_score > that.BC_score
         if self.linker_start != that.linker_start:
             return self.linker_start > that.linker_start
-        return self.BC_score > that.BC_score
+        if self.primer != that.primer:
+            return self.primer > that.primer
+        return self.polyT > that.polyT
 
     def get_additional_attributes(self):
         attr = []
@@ -89,6 +105,39 @@ class DoubleBarcodeDetectionResult(BarcodeDetectionResult):
         return BarcodeDetectionResult.header() + "\tpolyT_start\tprimer_end\tlinker_start\tlinker_end"
 
 
+class StereoBarcodeDetectionResult(DoubleBarcodeDetectionResult):
+    def __init__(self, read_id, barcode=BarcodeDetectionResult.NOSEQ, UMI=BarcodeDetectionResult.NOSEQ,
+                 BC_score=-1, UMI_good=False, strand=".",
+                 polyT=-1, primer=-1, linker_start=-1, linker_end=-1, tso=-1):
+        DoubleBarcodeDetectionResult.__init__(self, read_id, barcode, UMI, BC_score, UMI_good, strand,
+                                              polyT, primer, linker_start, linker_end)
+        self.tso5 = tso
+
+    def update_coordinates(self, delta):
+        self.tso5 = increase_if_valid(self.tso5, delta)
+        DoubleBarcodeDetectionResult.update_coordinates(self, delta)
+
+    def __str__(self):
+        return (DoubleBarcodeDetectionResult.__str__(self) +
+                "\t%d" % self.tso5)
+
+    def get_additional_attributes(self):
+        attr = []
+        if self.polyT != -1:
+            attr.append("PolyT detected")
+        if self.primer != -1:
+            attr.append("Primer detected")
+        if self.linker_start != -1:
+            attr.append("Linker detected")
+        if self.tso5 != -1:
+            attr.append("TSO detected")
+        return attr
+
+    @staticmethod
+    def header():
+        return DoubleBarcodeDetectionResult.header() + "\tTSO5"
+
+
 class TenXBarcodeDetectionResult(BarcodeDetectionResult):
     def __init__(self, read_id, barcode=BarcodeDetectionResult.NOSEQ, UMI=BarcodeDetectionResult.NOSEQ,
                  BC_score=-1, UMI_good=False, strand=".",
@@ -99,6 +148,10 @@ class TenXBarcodeDetectionResult(BarcodeDetectionResult):
 
     def is_valid(self):
         return self.barcode != BarcodeDetectionResult.NOSEQ
+
+    def update_coordinates(self, delta):
+        self.r1 = increase_if_valid(self.r1, delta)
+        self.polyT = increase_if_valid(self.polyT, delta)
 
     def more_informative_than(self, that):
         if self.polyT != that.polyT:
@@ -127,6 +180,34 @@ class TenXBarcodeDetectionResult(BarcodeDetectionResult):
         return BarcodeDetectionResult.header() + "\tpolyT_start\tR1_end"
 
 
+class SplittingBarcodeDetectionResult:
+    def __init__(self, read_id):
+        self.read_id = read_id
+        self.detected_patterns = []
+
+    def append(self, barcode_detection_result):
+        self.detected_patterns.append(barcode_detection_result)
+
+    def empty(self):
+        return not self.detected_patterns
+
+    def filter(self):
+        if not self.detected_patterns: return
+        barcoded_results = []
+        for r in self.detected_patterns:
+            if r.barcode != BarcodeDetectionResult.NOSEQ:
+                barcoded_results.append(r)
+
+        if not barcoded_results:
+            self.detected_patterns = [self.detected_patterns[0]]
+        else:
+            self.detected_patterns = barcoded_results
+
+    @staticmethod
+    def header():
+        return StereoBarcodeDetectionResult.header()
+
+
 class ReadStats:
     def __init__(self):
         self.read_count = 0
@@ -143,12 +224,427 @@ class ReadStats:
         if barcode_detection_result.UMI_good:
             self.umi_count += 1
 
+    def add_custom_stats(self, stat_name, val: int):
+        self.additional_attributes_counts[stat_name] += val
+
     def __str__(self):
-        human_readable_str = ("Total reads\t%d\nBarcode detected\t%d\nReliable UMI\t%d\n" %
-                              (self.read_count, self.bc_count, self.umi_count))
+        human_readable_str =  ("Total reads\t%d\nBarcode detected\t%d\nReliable UMI\t%d\n" %
+                      (self.read_count, self.bc_count, self.umi_count))
         for a in self.additional_attributes_counts:
             human_readable_str += "%s\t%d\n" % (a, self.additional_attributes_counts[a])
         return human_readable_str
+
+
+class StereoBarcodeDetector:
+    LINKER = "TTGTCTTCCTAAGAC"
+    TSO_PRIMER = "ACTGAGAGGCATGGCGACCTTATCAG"
+    PC1_PRIMER = "CTTCCGATCTATGGCGACCTTATCAG"
+    BC_LENGTH = 25
+    UMI_LENGTH = 10
+    NON_T_UMI_BASES = 0
+    UMI_LEN_DELTA = 4
+    TERMINAL_MATCH_DELTA = 3
+    STRICT_TERMINAL_MATCH_DELTA = 1
+
+    def __init__(self, barcodes, min_score=21, primer=1):
+        if primer == 1:
+            self.MAIN_PRIMER = StereoBarcodeDetector.TSO_PRIMER
+        else:
+            self.MAIN_PRIMER = StereoBarcodeDetector.PC1_PRIMER
+        self.pcr_primer_indexer = ArrayKmerIndexer([self.MAIN_PRIMER], kmer_size=6)
+        self.linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=5)
+        self.strict_linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=6)
+        bit_barcodes = map(str_to_2bit, barcodes)
+        self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
+        logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+        self.umi_set = None
+        self.min_score = min_score
+
+    def find_barcode_umi_multiple(self, read_id, sequence):
+        read_result = []
+        r = self._find_barcode_umi_fwd(read_id, sequence)
+        current_start = 0
+        while r.polyT != -1:
+            r.set_strand("+")
+            read_result.append(r)
+            new_start = r.polyT + 50
+            current_start += new_start
+            if len(sequence) - current_start < 50:
+                break
+            seq = sequence[current_start:]
+            new_id = read_id + "_%d" % current_start
+            r = self._find_barcode_umi_fwd(new_id, seq)
+
+        rev_seq = reverese_complement(sequence)
+        read_id += "_R"
+        rr = self._find_barcode_umi_fwd(read_id, rev_seq)
+        current_start = 0
+        while rr.polyT != -1:
+            rr.set_strand("-")
+            read_result.append(rr)
+            new_start = rr.polyT + 50
+            current_start += new_start
+            if len(rev_seq) - current_start < 50:
+                break
+            seq = rev_seq[current_start:]
+            new_id = read_id + "_%d" % current_start
+            rr = self._find_barcode_umi_fwd(new_id, seq)
+
+        if not read_result:
+            read_result.append(r)
+        return read_result
+
+    def find_barcode_umi(self, read_id, sequence):
+        read_result = self._find_barcode_umi_fwd(read_id, sequence)
+        if read_result.polyT != -1:
+            read_result.set_strand("+")
+        if read_result.is_valid():
+            return read_result
+
+        rev_seq = reverese_complement(sequence)
+        read_rev_result = self._find_barcode_umi_fwd(read_id, rev_seq)
+        if read_rev_result.polyT != -1:
+            read_rev_result.set_strand("-")
+        if read_rev_result.is_valid():
+            return read_rev_result
+
+        return read_result if read_result.more_informative_than(read_rev_result) else read_rev_result
+
+    def _find_barcode_umi_fwd(self, read_id, sequence):
+        polyt_start = find_polyt_start(sequence)
+
+        linker_start, linker_end = None, None
+        if polyt_start != -1:
+            # use relaxed parameters is polyA is found
+            linker_occurrences = self.linker_indexer.get_occurrences(sequence[0:polyt_start + 1])
+            linker_start, linker_end = detect_exact_positions(sequence, 0, polyt_start + 1,
+                                                              self.linker_indexer.k, StereoBarcodeDetector.LINKER,
+                                                              linker_occurrences, min_score=12,
+                                                              start_delta=self.TERMINAL_MATCH_DELTA,
+                                                              end_delta=self.TERMINAL_MATCH_DELTA)
+
+        if linker_start is None:
+            # if polyT was not found, or linker was not found to the left of polyT, look for linker in the entire read
+            linker_occurrences = self.strict_linker_indexer.get_occurrences(sequence)
+            linker_start, linker_end = detect_exact_positions(sequence, 0, len(sequence),
+                                                              self.linker_indexer.k, StereoBarcodeDetector.LINKER,
+                                                              linker_occurrences, min_score=12,
+                                                              start_delta=self.STRICT_TERMINAL_MATCH_DELTA,
+                                                              end_delta=self.STRICT_TERMINAL_MATCH_DELTA)
+
+        if linker_start is None:
+            return DoubleBarcodeDetectionResult(read_id, polyT=polyt_start)
+        logger.debug("LINKER: %d-%d" % (linker_start, linker_end))
+
+        if polyt_start == -1:
+            # if polyT was not detected earlier, use relaxed parameters once the linker is found
+            presumable_polyt_start = linker_end + self.UMI_LENGTH
+            search_start = presumable_polyt_start - 4
+            search_end = min(len(sequence), presumable_polyt_start + 10)
+            polyt_start = find_polyt_start(sequence[search_start:search_end], window_size=5, polya_fraction=1.0)
+            if polyt_start != -1:
+                polyt_start += search_start
+
+        primer_occurrences = self.pcr_primer_indexer.get_occurrences(sequence[:linker_start])
+        primer_start, primer_end = detect_exact_positions(sequence, 0, linker_start,
+                                                          self.pcr_primer_indexer.k, self.MAIN_PRIMER,
+                                                          primer_occurrences, min_score=12,
+                                                          end_delta=self.TERMINAL_MATCH_DELTA)
+        if primer_start is not None:
+            logger.debug("PRIMER: %d-%d" % (primer_start, primer_end))
+        else:
+            primer_start = -1
+            primer_end = linker_start - self.BC_LENGTH - 1
+
+        if primer_end < 0:
+            return DoubleBarcodeDetectionResult(read_id, polyT=polyt_start, primer=-1,
+                                                linker_start=linker_start, linker_end=linker_end)
+
+        barcode_start = primer_end + 1
+        barcode_end = linker_start - 1
+        bc_len = barcode_end - barcode_start
+        if abs(bc_len - self.BC_LENGTH) > 10:
+            return DoubleBarcodeDetectionResult(read_id, polyT=polyt_start, primer=primer_end,
+                                                linker_start=linker_start, linker_end=linker_end)
+
+        potential_barcode = sequence[barcode_start:barcode_end + 1]
+        logger.debug("Barcode: %s" % (potential_barcode))
+        matching_barcodes = self.barcode_indexer.get_occurrences(potential_barcode, max_hits=10, min_kmers=2)
+        barcode, bc_score, bc_start, bc_end = \
+            find_candidate_with_max_score_ssw(matching_barcodes, potential_barcode,
+                                              min_score=self.min_score, sufficient_score=self.BC_LENGTH - 1)
+
+        if barcode is None:
+            return DoubleBarcodeDetectionResult(read_id, polyT=polyt_start, primer=primer_end,
+                                                linker_start=linker_start, linker_end=linker_end)
+        logger.debug("Found: %s %d-%d" % (barcode, bc_start, bc_end))
+
+        potential_umi_start = linker_end + 1
+        potential_umi_end = polyt_start - 1
+        umi = None
+        good_umi = False
+        if potential_umi_start + 2 * self.UMI_LENGTH > potential_umi_end > potential_umi_start:
+            umi = sequence[potential_umi_start:potential_umi_end + 1]
+            logger.debug("Potential UMI: %s" % umi)
+            good_umi = abs(len(umi) - self.UMI_LENGTH) <= self.UMI_LEN_DELTA
+
+        if not umi:
+            return DoubleBarcodeDetectionResult(read_id, barcode, BC_score=bc_score,
+                                            polyT=polyt_start, primer=primer_end,
+                                            linker_start=linker_start, linker_end=linker_end)
+        return DoubleBarcodeDetectionResult(read_id, barcode, umi, bc_score, good_umi,
+                                            polyT=polyt_start, primer=primer_end,
+                                            linker_start=linker_start, linker_end=linker_end)
+
+    @staticmethod
+    def result_type():
+        return DoubleBarcodeDetectionResult
+
+
+class StereoBarcodeDetectorTSO(StereoBarcodeDetector):
+    def __init__(self, barcode_list, min_score=21):
+        StereoBarcodeDetector.__init__(self, barcode_list, min_score, primer=1)
+
+
+class StereoBarcodeDetectorPC(StereoBarcodeDetector):
+    def __init__(self, barcode_list, min_score=21):
+        StereoBarcodeDetector.__init__(self, barcode_list, min_score, primer=2)
+
+
+class StereoSplttingBarcodeDetector:
+    TSO5 = "CCCGCCTCTCAGTACGTCAGCAG"
+    LINKER = "TTGTCTTCCTAAGAC"
+    TSO_PRIMER = "ACTGAGAGGCATGGCGACCTTATCAG"
+    PC1_PRIMER = "CTTCCGATCTATGGCGACCTTATCAG"
+    BC_LENGTH = 25
+    UMI_LENGTH = 10
+    NON_T_UMI_BASES = 0
+    UMI_LEN_DELTA = 3
+    TERMINAL_MATCH_DELTA = 3
+    STRICT_TERMINAL_MATCH_DELTA = 1
+
+    def __init__(self, barcodes, min_score=21, primer=1):
+        if primer == 1:
+            self.MAIN_PRIMER = self.TSO_PRIMER
+        else:
+            self.MAIN_PRIMER = self.PC1_PRIMER
+        self.tso5_indexer = ArrayKmerIndexer([self.TSO5], kmer_size=8)
+        self.pcr_primer_indexer = ArrayKmerIndexer([self.MAIN_PRIMER], kmer_size=6)
+        self.linker_indexer = ArrayKmerIndexer([self.LINKER], kmer_size=5)
+        self.strict_linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=7)
+        #self.barcode_indexer = KmerIndexer(barcodes, kmer_size=14)
+        #logger.info("Indexed %d barcodes" % len(self.barcode_indexer.seq_list))
+        bit_barcodes = map(str_to_2bit, barcodes)
+        self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
+        logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+        self.umi_set = None
+        self.min_score = min_score
+
+    def find_barcode_umi(self, read_id, sequence):
+        read_result = SplittingBarcodeDetectionResult(read_id)
+        logger.debug("Looking in forward direction")
+        r = self._find_barcode_umi_fwd(read_id, sequence)
+        prev_start = 0
+        while r.polyT != -1:
+            r.set_strand("+")
+            read_result.append(r)
+            if r.tso5 != -1:
+                current_start = r.tso5 + 15
+            else:
+                current_start = r.polyT + 100
+            # always make a step
+            current_start = max(prev_start + 150, current_start)
+            prev_start = current_start
+            if len(sequence) - current_start < 50:
+                break
+
+            logger.debug("Looking further from %d" % current_start)
+            seq = sequence[current_start:]
+            r = self._find_barcode_umi_fwd(read_id, seq)
+            r.update_coordinates(current_start)
+
+        logger.debug("Looking in reverse direction")
+        rev_seq = reverese_complement(sequence)
+        r = self._find_barcode_umi_fwd(read_id, rev_seq)
+        prev_start = 0
+        while r.polyT != -1:
+            r.set_strand("-")
+            read_result.append(r)
+            if r.tso5 != -1:
+                current_start = r.tso5 + 15
+            else:
+                current_start = r.polyT + 100
+            # always make a step
+            current_start = max(prev_start + 150, current_start)
+            prev_start = current_start
+            if len(rev_seq) - current_start < 50:
+                break
+
+            logger.debug("Looking further from %d" % current_start)
+            seq = rev_seq[current_start:]
+            r = self._find_barcode_umi_fwd(read_id, seq)
+            r.update_coordinates(current_start)
+
+        if read_result.empty():
+            # add empty result anyway
+            read_result.append(r)
+
+        read_result.filter()
+        logger.debug("Total barcodes detected %d" % len(read_result.detected_patterns))
+        return read_result
+
+    def find_barcode_umi_single(self, read_id, sequence):
+        read_result = self._find_barcode_umi_fwd(read_id, sequence)
+        if read_result.polyT != -1:
+            read_result.set_strand("+")
+        if read_result.is_valid():
+            return read_result
+
+        rev_seq = reverese_complement(sequence)
+        read_rev_result = self._find_barcode_umi_fwd(read_id, rev_seq)
+        if read_rev_result.polyT != -1:
+            read_rev_result.set_strand("-")
+        if read_rev_result.is_valid():
+            return read_rev_result
+
+        return read_result if read_result.more_informative_than(read_rev_result) else read_rev_result
+
+    def _find_barcode_umi_fwd(self, read_id, sequence):
+        polyt_start = find_polyt_start(sequence)
+        logger.debug("PolyT found right away %d" % polyt_start)
+
+        linker_start, linker_end = None, None
+        tso5_start = None
+        if polyt_start != -1:
+            # use relaxed parameters is polyA is found
+            logger.debug("Looking for linker in %d" % len(sequence[0:polyt_start + 1]))
+            linker_occurrences = self.linker_indexer.get_occurrences(sequence[0:polyt_start + 1])
+            linker_start, linker_end = detect_exact_positions(sequence, 0, polyt_start + 1,
+                                                              self.linker_indexer.k, self.LINKER,
+                                                              linker_occurrences, min_score=10,
+                                                              start_delta=self.TERMINAL_MATCH_DELTA,
+                                                              end_delta=self.TERMINAL_MATCH_DELTA)
+
+            tso5_occurrences = self.tso5_indexer.get_occurrences(sequence[polyt_start + 1:])
+            tso5_start, tso5_end = detect_first_exact_positions(sequence, polyt_start + 1, len(sequence),
+                                                                self.tso5_indexer.k, self.TSO5,
+                                                                tso5_occurrences, min_score=15,
+                                                                start_delta=self.TERMINAL_MATCH_DELTA,
+                                                                end_delta=self.TERMINAL_MATCH_DELTA)
+
+        if linker_start is None:
+            # if polyT was not found, or linker was not found to the left of polyT, look for linker in the entire read
+            linker_occurrences = self.strict_linker_indexer.get_occurrences(sequence)
+            linker_start, linker_end = detect_first_exact_positions(sequence, 0, len(sequence),
+                                                                    self.linker_indexer.k, StereoBarcodeDetector.LINKER,
+                                                                    linker_occurrences, min_score=12,
+                                                                    start_delta=self.STRICT_TERMINAL_MATCH_DELTA,
+                                                                    end_delta=self.STRICT_TERMINAL_MATCH_DELTA)
+
+        if linker_start is None:
+            return StereoBarcodeDetectionResult(read_id, polyT=polyt_start)
+        logger.debug("LINKER: %d-%d" % (linker_start, linker_end))
+
+        if polyt_start == -1 or polyt_start < linker_start:
+            # if polyT was not detected earlier, use relaxed parameters once the linker is found
+            presumable_polyt_start = linker_end + self.UMI_LENGTH
+            search_start = presumable_polyt_start - 4
+            search_end = min(len(sequence), presumable_polyt_start + 10)
+            polyt_start = find_polyt_start(sequence[search_start:search_end], window_size=5, polya_fraction=1.0)
+            if polyt_start != -1:
+                polyt_start += search_start
+                logger.debug("PolyT found later %d" % polyt_start)
+            else:
+                logger.debug("PolyT was not found %d" % polyt_start)
+
+            tso5_occurrences = self.tso5_indexer.get_occurrences(sequence[polyt_start + 1:])
+            tso5_start, tso5_end = detect_first_exact_positions(sequence, polyt_start + 1, len(sequence),
+                                                                self.tso5_indexer.k, self.TSO5,
+                                                                tso5_occurrences, min_score=15,
+                                                                start_delta=self.TERMINAL_MATCH_DELTA,
+                                                                end_delta=self.TERMINAL_MATCH_DELTA)
+
+        if tso5_start:
+            logger.debug("TSO found %d" % tso5_start)
+            # check that no another linker is found inbetween polyA and TSO 5'
+            linker_occurrences = self.strict_linker_indexer.get_occurrences(sequence[polyt_start + 1: tso5_start])
+            new_linker_start, new_linker_end = detect_exact_positions(sequence, polyt_start + 1, tso5_start,
+                                                                      self.linker_indexer.k, self.LINKER,
+                                                                      linker_occurrences, min_score=12,
+                                                                      start_delta=self.STRICT_TERMINAL_MATCH_DELTA,
+                                                                      end_delta=self.STRICT_TERMINAL_MATCH_DELTA)
+
+            if new_linker_start is not None and new_linker_start != -1 and new_linker_start - polyt_start > 100:
+                # another linker found inbetween polyT and TSO
+                logger.debug("Another linker was found before TSO: %d" % new_linker_start)
+                tso5_start = new_linker_start - self.BC_LENGTH - len(self.MAIN_PRIMER) - len(self.TSO5)
+                logger.debug("TSO updated %d" % tso5_start)
+        else:
+            tso5_start = -1
+
+        primer_occurrences = self.pcr_primer_indexer.get_occurrences(sequence[:linker_start])
+        primer_start, primer_end = detect_exact_positions(sequence, 0, linker_start,
+                                                          self.pcr_primer_indexer.k, self.MAIN_PRIMER,
+                                                          primer_occurrences, min_score=12,
+                                                          end_delta=self.TERMINAL_MATCH_DELTA)
+        if primer_start is not None:
+            logger.debug("PRIMER: %d-%d" % (primer_start, primer_end))
+        else:
+            primer_end = linker_start - self.BC_LENGTH - 1
+
+        if primer_end < 0:
+            return StereoBarcodeDetectionResult(read_id, polyT=polyt_start, primer=-1,
+                                                linker_start=linker_start, linker_end=linker_end, tso=tso5_start)
+
+        barcode_start = primer_end + 1
+        barcode_end = linker_start - 1
+        bc_len = barcode_end - barcode_start
+        if abs(bc_len - self.BC_LENGTH) > 10:
+            return StereoBarcodeDetectionResult(read_id, polyT=polyt_start, primer=primer_end,
+                                                linker_start=linker_start, linker_end=linker_end, tso=tso5_start)
+
+        potential_barcode = sequence[barcode_start:barcode_end + 1]
+        logger.debug("Barcode: %s" % (potential_barcode))
+        matching_barcodes = self.barcode_indexer.get_occurrences(potential_barcode, max_hits=10, min_kmers=2)
+        barcode, bc_score, bc_start, bc_end = \
+            find_candidate_with_max_score_ssw(matching_barcodes, potential_barcode,
+                                              min_score=self.min_score, sufficient_score=self.BC_LENGTH - 1)
+
+        if barcode is None:
+            return StereoBarcodeDetectionResult(read_id, polyT=polyt_start, primer=primer_end,
+                                                linker_start=linker_start, linker_end=linker_end, tso=tso5_start)
+        logger.debug("Found: %s %d-%d" % (barcode, bc_start, bc_end))
+
+        potential_umi_start = linker_end + 1
+        potential_umi_end = polyt_start - 1
+        umi = None
+        good_umi = False
+        if potential_umi_start + 2 * self.UMI_LENGTH > potential_umi_end > potential_umi_start:
+            umi = sequence[potential_umi_start:potential_umi_end + 1]
+            logger.debug("Potential UMI: %s" % umi)
+            good_umi = abs(len(umi) - self.UMI_LENGTH) <= self.UMI_LEN_DELTA
+
+        if not umi:
+            return StereoBarcodeDetectionResult(read_id, barcode, BC_score=bc_score,
+                                            polyT=polyt_start, primer=primer_end,
+                                            linker_start=linker_start, linker_end=linker_end, tso=tso5_start)
+        return StereoBarcodeDetectionResult(read_id, barcode, umi, bc_score, good_umi,
+                                            polyT=polyt_start, primer=primer_end,
+                                            linker_start=linker_start, linker_end=linker_end, tso=tso5_start)
+
+    @staticmethod
+    def result_type():
+        return SplittingBarcodeDetectionResult
+
+
+class StereoSplitBarcodeDetectorTSO(StereoSplttingBarcodeDetector):
+    def __init__(self, barcode_list, min_score=21):
+        StereoSplttingBarcodeDetector.__init__(self, barcode_list, min_score, primer=1)
+
+
+class StereoSplitBarcodeDetectorPC(StereoSplttingBarcodeDetector):
+    def __init__(self, barcode_list, min_score=21):
+        StereoSplttingBarcodeDetector.__init__(self, barcode_list, min_score, primer=2)
 
 
 class DoubleBarcodeDetector:

@@ -51,7 +51,7 @@ def align_pattern_ssw(sequence, start, end, pattern, min_score=0):
         alignment.read_start, alignment.read_end, alignment.optimal_score
 
 
-def find_candidate_with_max_score_ssw(barcode_matches, read_sequence, min_score=10, score_diff=0):
+def find_candidate_with_max_score_ssw(barcode_matches: list, read_sequence, min_score=10, score_diff=0, sufficient_score=0):
     best_match = [0, 0, 0]
     best_barcode = None
     second_best_score = 0
@@ -59,8 +59,9 @@ def find_candidate_with_max_score_ssw(barcode_matches, read_sequence, min_score=
     align_mgr = AlignmentMgr(match_score=1, mismatch_penalty=1)
     align_mgr.set_reference(read_sequence)
     for barcode in barcode_matches.keys():
+        barcode = barcode_match[0]
         align_mgr.set_read(barcode)
-        alignment = align_mgr.align(gap_open=1.5, gap_extension=1)
+        alignment = align_mgr.align(gap_open=1, gap_extension=1)
         if alignment.optimal_score < min_score:
             continue
 
@@ -76,20 +77,29 @@ def find_candidate_with_max_score_ssw(barcode_matches, read_sequence, min_score=
             best_match[1] = alignment.reference_start
             best_match[2] = alignment.reference_end
 
+        if alignment.optimal_score > sufficient_score > 0:
+            # dirty hack to select first "sufficiently good" alignment
+            break
+
     if best_match[0] - second_best_score < score_diff:
         return None, 0, 0, 0
 
     return best_barcode, best_match[0], best_match[1], best_match[2]
 
 
-def detect_exact_positions(sequence, start, end, kmer_size, pattern, pattern_occurrences,
+def detect_exact_positions(sequence, start, end, kmer_size, pattern, pattern_occurrences: list,
                            min_score=0, start_delta=-1, end_delta=-1):
-    if not pattern_occurrences:
+    pattern_index = None
+    for i, p in enumerate(pattern_occurrences):
+        if p[0] == pattern:
+            pattern_index = i
+            break
+    if pattern_index is None:
         return None, None
 
     start_pos, end_pos, pattern_start, pattern_end, score  = None, None, None, None, 0
     last_potential_pos = -2*len(pattern)
-    for match_position in pattern_occurrences[pattern][2]:
+    for match_position in pattern_occurrences[pattern_index][2]:
         if match_position - last_potential_pos < len(pattern):
             continue
 
@@ -105,8 +115,67 @@ def detect_exact_positions(sequence, start, end, kmer_size, pattern, pattern_occ
     if start_pos is None:
         return None, None
 
-    if start_delta > 0 and pattern_start > start_delta:
+    if start_delta >= 0 and pattern_start > start_delta:
         return None, None
-    if end_delta > 0 and len(pattern) - pattern_end - 1 > end_delta:
+    if end_delta >= 0 and len(pattern) - pattern_end - 1 > end_delta:
         return None, None
-    return start_pos, end_pos
+    leftover_bases = len(pattern) - pattern_end - 1
+    skipped_bases = pattern_start
+    return start_pos - skipped_bases, end_pos + leftover_bases
+
+
+def detect_first_exact_positions(sequence, start, end, kmer_size, pattern, pattern_occurrences: list,
+                           min_score=0, start_delta=-1, end_delta=-1):
+    pattern_index = None
+    for i, p in enumerate(pattern_occurrences):
+        if p[0] == pattern:
+            pattern_index = i
+            break
+    if pattern_index is None:
+        return None, None
+
+    start_pos, end_pos, pattern_start, pattern_end, score  = None, None, None, None, 0
+    last_potential_pos = -2*len(pattern)
+    for match_position in pattern_occurrences[pattern_index][2]:
+        if match_position - last_potential_pos < len(pattern):
+            continue
+
+        potential_start = start + match_position - len(pattern) + kmer_size
+        potential_start = max(start, potential_start)
+        potential_end = start + match_position + len(pattern) + 1
+        potential_end = min(end, potential_end)
+        alignment = \
+            align_pattern_ssw(sequence, potential_start, potential_end, pattern, min_score)
+        if alignment[4] is not None:
+            start_pos, end_pos, pattern_start, pattern_end, score = alignment
+            break
+
+    if start_pos is None:
+        return None, None
+
+    if start_delta >= 0 and pattern_start > start_delta:
+        return None, None
+    if end_delta >= 0 and len(pattern) - pattern_end - 1 > end_delta:
+        return None, None
+    leftover_bases = len(pattern) - pattern_end - 1
+    skipped_bases = pattern_start
+    return start_pos - skipped_bases, end_pos + leftover_bases
+
+
+NUCL2BIN = {'A': 0, 'C': 1, 'G': 3, 'T': 2, 'a': 0, 'c': 1, 'g': 3, 't': 2}
+BIN2NUCL = ["A", "C", "T", "G"]
+
+
+def str_to_2bit(seq):
+    kmer_idx = 0
+    seq_len = len(seq)
+    for i in range(seq_len):
+        kmer_idx |= ((ord(seq[i]) & 6) >> 1) << ((seq_len - i - 1) * 2)
+    return kmer_idx
+
+
+def bit_to_str(seq, seq_len):
+    str_seq = ""
+    for i in range(seq_len):
+        str_seq += BIN2NUCL[(seq >> ((seq_len - i - 1) * 2)) & 3]
+    return str_seq

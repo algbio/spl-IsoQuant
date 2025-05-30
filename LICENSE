@@ -1,4 +1,4 @@
-IsoQuant: A tool for isoform assignment and quantification fror long and barcoded reads
+IsoQuant: A tool for isoform assignment and quantification for long and barcoded reads
 Copyright (c) 2022-2024 University of Helsinki
 Copyright (c) 2020-2022 Saint Petersburg State University
 
@@ -32,8 +32,10 @@ Center for Algorithmic Biotechnology, Institute of Translational Biomedicine, St
 Current contributors:
 
     Andrey Prjibelski,
-    Rebecca Pfeil,
+    Maria Burunducova,
+    Jack Freeman,
     Alla Mikheenko,
+    Rebecca Pfeil,
     James Webber,
     Alexandru Tomescu
     and

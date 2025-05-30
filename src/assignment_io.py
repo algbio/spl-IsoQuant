@@ -60,7 +60,8 @@ class AbstractAssignmentPrinter:
         self.output_file_name = output_file_name
         self.gzipped = gzipped
         if gzipped:
-            self.output_file = gzip.open(output_file_name + ".gz", "wt")
+            self.output_file_name += ".gz"
+            self.output_file = gzip.open(self.output_file_name, "wt")
         else:
             self.output_file = open(self.output_file_name, "w")
 
@@ -214,7 +215,7 @@ class BasicTSVAssignmentPrinter(AbstractAssignmentPrinter):
     def __init__(self, output_file_name, params, io_support, additional_header = "", gzipped=False):
         AbstractAssignmentPrinter.__init__(self, output_file_name, params, gzipped=gzipped)
         self.header = "#read_id\tchr\tstrand\tisoform_id\tgene_id" \
-                      "\tassignment_type\tassignment_events\texons\tadditional_info\n"
+                      "\tassignment_type\tassignment_events\texons\tadditional_info\tgroups\n"
         self.output_file.write(additional_header)
         self.output_file.write(self.header)
         self.io_support = io_support
@@ -230,9 +231,10 @@ class BasicTSVAssignmentPrinter(AbstractAssignmentPrinter):
             val = read_assignment.additional_attributes[attr]
             additional_info.append("%s=%s;" % (attr, val))
         if additional_info:
-            line += "\t" + " ".join(additional_info) + "\n"
+            line += "\t" + " ".join(additional_info)
         else:
-            line += "\t*\n"
+            line += "\t*"
+        line += "\t%s\n" % read_assignment.read_group
         return line
 
     def add_read_info(self, read_assignment):
@@ -291,9 +293,10 @@ class BasicTSVAssignmentPrinter(AbstractAssignmentPrinter):
                 additional_info.append("%s=%s;" % (attr, val))
 
             if additional_info:
-                line += "\t" + " ".join(additional_info) + "\n"
+                line += "\t" + " ".join(additional_info)
             else:
-                line += "\t*\n"
+                line += "\t*"
+            line += "\t%s\n" % read_assignment.read_group
             self.output_file.write(line)
 
 

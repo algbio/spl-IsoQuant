@@ -29,16 +29,16 @@ def set_logger(logger_instance):
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--output", "-o", type=str, help="output prefix name", required=True)
-    parser.add_argument("--barcodes", "-b", type=str, help="read - barcode - UMI table", required=True)
-    parser.add_argument("--read_assignments", "-r", type=str, help="IsoQuant read assignments", required=True)
+    parser.add_argument("--barcodes", "-b", nargs='+', type=str, help="read - barcode - UMI table", required=True)
+    parser.add_argument("--read_assignments", "-r", nargs='+', type=str, help="IsoQuant read assignments", required=True)
     parser.add_argument("--genedb", "-g", help="gene database in gffutils DB format (optional)", type=str)
     parser.add_argument("--bam", type=str, help="original BAM file, provide only if you need a BAM file"
                                                 " with UMI-filtered alignments")
 
-    parser.add_argument("--min_distance", nargs='+', type=int, help="minimal edit distance for UMIs to be considered distinct;"
+    parser.add_argument("--min_distance", type=int, help="minimal edit distance for UMIs to be considered distinct;"
                                                          "length difference is added to this values by default;"
                                                          "0 for equal UMIs, -1 for keeping only a single gene-barcode "
-                                                         "read. By default will be process with -1, 2, 3", default=[-1,2,3])
+                                                         "read. By default will be process with -1, 2, 3", default=3)
     parser.add_argument("--untrusted_umis", action="store_true", help="allow untrusted UMIs to be used", default=False)
     parser.add_argument("--only_spliced", action="store_true", help="keep only spliced reads", default=False)
     parser.add_argument("--only_unique", action="store_true", help="keep only non-ambiguous reads", default=False)
@@ -65,7 +65,7 @@ def main():
     else:
         transcript_info_dict = {}
 
-    for d in set(args.min_distance):
+    for d in sorted({-1, 2, args.min_distance}):
         logger.info("== Filtering by UMIs with edit distance %d ==" % d)
         output_prefix = args.output + (".ALL" if d < 0 else "ED%d" % d)
         logger.info("Results will be saved to %s" % output_prefix)
