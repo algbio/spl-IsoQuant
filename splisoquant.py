@@ -552,7 +552,7 @@ def set_logger(args, logger_instance):
     if all(ch.get_name() != h.get_name() for h in logger_instance.handlers):
         logger_instance.addHandler(ch)
 
-    logger.info("Running IsoQuant version " + args._version)
+    logger.info("Running Spl-IsoQuant version " + args._version)
 
 
 def set_data_dependent_options(args):
@@ -828,7 +828,7 @@ def call_barcodes(args):
 
 
 def run_pipeline(args):
-    logger.info(" === IsoQuant pipeline started === ")
+    logger.info(" === Spl-IsoQuant pipeline started === ")
     logger.info("gffutils version: %s" % gffutils.__version__)
     logger.info("pysam version: %s" % pysam.__version__)
     logger.info("pyfaidx version: %s" % pyfaidx.__version__)
@@ -859,7 +859,7 @@ def run_pipeline(args):
     if len(args.input_data.samples) > 1 and args.genedb:
         combine_counts(args.input_data, args.output)
 
-    logger.info(" === IsoQuant pipeline finished === ")
+    logger.info(" === Spl-IsoQuant pipeline finished === ")
 
 
 # Test mode is triggered by --test option
@@ -869,10 +869,11 @@ class TestMode(argparse.Action):
         if os.path.exists(out_dir):
             shutil.rmtree(out_dir)
         source_dir = os.path.dirname(os.path.realpath(__file__))
-        options = ['--output', out_dir, '--threads', '2',
-                   '--fastq', os.path.join(source_dir, 'tests/simple_data/chr9.4M.ont.sim.fq.gz'),
-                   '--reference', os.path.join(source_dir, 'tests/simple_data/chr9.4M.fa.gz'),
-                   '--genedb', os.path.join(source_dir, 'tests/simple_data/chr9.4M.gtf.gz'),
+        options = ['--output', out_dir, '--threads', '1', '--mode', 'stereo_split_pc',
+                   '--fastq', os.path.join(source_dir, 'tests/stereo/S1.4K.subsample.fq.gz'),
+                   '--barcode_whitelist', os.path.join(source_dir, 'tests/stereo/barcodes.tsv'),
+                   '--reference', os.path.join(source_dir, 'tests/stereo/GRCm39.chrX.fa.gz'),
+                   '--genedb', os.path.join(source_dir, 'tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf'),
                    '--clean_start', '--data_type', 'nanopore', '--complete_genedb', '--force', '-p', 'TEST_DATA']
         print('=== Running in test mode === ')
         print('Any other option is ignored ')
@@ -889,7 +890,7 @@ class TestMode(argparse.Action):
         with open('isoquant_test/isoquant.log', 'r') as f:
             log = f.read()
 
-        correct_results = ['total assignments 4', 'polyA tail detected in 2', 'unique: 1', 'known: 2', 'Processed 1 experiment']
+        correct_results = ['unique: 1', 'Processed 1 experiment', 'Barcoded: 27']
         return all([result in log for result in correct_results])
 
 
