@@ -1,5 +1,9 @@
 # Spl-IsoQuant changelog
 
+## Spl-IsoQuant 2.0.0, 19 June 2025
+
+Spl-IsoQuant 2 for Stereo-seq long read data.
+
 ## Spl-IsoQuant 1.0.0, 12 December 2024
 
 Improve poly(A) processing and treatment of ambiguously assigned reads.

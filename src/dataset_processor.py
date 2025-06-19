@@ -701,12 +701,12 @@ class DatasetProcessor:
 
     # TODO: add locks and --resume
     def filter_umis(self, sample):
-        # edit distances for UMI filtering, first one will be used for counts
+        # edit distances for UMI filtering, the first one will be used for counts
         umi_ed_dict = {IsoQuantMode.bulk: [],
-                       IsoQuantMode.tenX: [2, -1],
-                       IsoQuantMode.double: [2, -1],
-                       IsoQuantMode.stereo_pc: [4, -1],
-                       IsoQuantMode.stereo_split_pc: [4, -1]}
+                       IsoQuantMode.tenX: [2],
+                       IsoQuantMode.double: [2],
+                       IsoQuantMode.stereo_pc: [4],
+                       IsoQuantMode.stereo_split_pc: [4]}
         if self.args.barcoded_reads:
             sample.barcoded_reads = self.args.barcoded_reads
 

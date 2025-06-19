@@ -144,7 +144,7 @@ def parse_args(cmd_args=None, namespace=None):
     # SC ARGUMENTS
     sc_args_group.add_argument("--mode", "-m", type=str, choices=ISOQUANT_MODES,
                                help="IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
-                                    "; default:%s" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
+                                    "; default:%s" % IsoQuantMode.stereo_split_pc.name, default=IsoQuantMode.stereo_split_pc.name)
     sc_args_group.add_argument('--barcode_whitelist', type=str,
                                help='file with barcode whitelist for barcode calling')
     sc_args_group.add_argument("--barcoded_reads", type=str, nargs='+',

@@ -45,9 +45,7 @@ BARCODE_CALLING_MODES = {'tenX': TenXBarcodeDetector,
                          'double': DoubleBarcodeDetector,
                          'double_illumina': IlluminaDoubleBarcodeDetector,
                          'double_slow': BruteForceDoubleBarcodeDetector,
-                         'stereo_tso': StereoBarcodeDetectorTSO,
                          'stereo_pc': StereoBarcodeDetectorPC,
-                         'stereo_split_tso': StereoSplitBarcodeDetectorTSO,
                          'stereo_split_pc': StereoSplitBarcodeDetectorPC,
 }
 
@@ -442,7 +440,7 @@ def parse_args(sys_argv):
     parser.add_argument("--barcodes", "-b", type=str, help="barcode whitelist", required=False)
     # parser.add_argument("--umi", "-u", type=str, help="potential UMIs, detected de novo if not set")
     parser.add_argument("--mode", type=str, help="mode to be used", choices=BARCODE_CALLING_MODES.keys(),
-                        default='double')
+                        default='stereo_split_pc')
     parser.add_argument("--input", "-i", type=str, help="input reads in [gzipped] FASTA, FASTQ, BAM, SAM",
                         required=True)
     parser.add_argument("--threads", "-t", type=int, help="threads to use (16)", default=16)
