@@ -445,6 +445,9 @@ def check_input_params(args):
     if not isinstance(args.mode, IsoQuantMode):
         args.mode = IsoQuantMode[args.mode]
     if args.mode.needs_barcode_calling():
+        args.no_model_construction = True
+        if not args.genedb:
+            logger.warning("Using single-cell/spatial mode requires gene annotation")
         if not args.barcode_whitelist and not args.barcoded_reads:
             logger.critical("You have chosen single-cell/spatial mode %s, please specify barcode whitelist or file with "
                             "barcoded reads" % args.mode.name)
