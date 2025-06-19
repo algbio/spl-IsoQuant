@@ -865,11 +865,11 @@ def run_pipeline(args):
 # Test mode is triggered by --test option
 class TestMode(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        out_dir = 'isoquant_test'
-        if os.path.exists(out_dir):
-            shutil.rmtree(out_dir)
+        self.out_dir = 'splisoquant_test'
+        if os.path.exists(self.out_dir):
+            shutil.rmtree(self.out_dir)
         source_dir = os.path.dirname(os.path.realpath(__file__))
-        options = ['--output', out_dir, '--threads', '1', '--mode', 'stereo_split_pc',
+        options = ['--output', self.out_dir, '--threads', '1', '--mode', 'stereo_split_pc',
                    '--fastq', os.path.join(source_dir, 'tests/stereo/S1.4K.subsample.fq.gz'),
                    '--barcode_whitelist', os.path.join(source_dir, 'tests/stereo/barcodes.tsv'),
                    '--reference', os.path.join(source_dir, 'tests/stereo/GRCm39.chrX.fa.gz'),
@@ -885,9 +885,8 @@ class TestMode(argparse.Action):
             exit(-1)
         parser.exit()
 
-    @staticmethod
-    def _check_log():
-        with open('isoquant_test/isoquant.log', 'r') as f:
+    def _check_log(self):
+        with open(os.path.join(self.out_dir, 'isoquant.log'), 'r') as f:
             log = f.read()
 
         correct_results = ['unique: 1', 'Processed 1 experiment', 'Barcoded: 27']

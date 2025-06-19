@@ -291,15 +291,14 @@ Typically, this test takes no more than a few minutes.
 
 As a result, in the `splisoseq_test/TEST` folder you will get the following files:
 
+* `TEST_DATA.split_reads_0.fa` - extracted cDNAs;
 * `TEST_DATA.barcoded_reads_0.tsv` - detected barcodes;
-* `TEST_DATA.UMI_filteredED2.UMI_filtered.allinfo` - PCR deduplicated reads with barcodes and gene assignemts;
-* `TEST_DATA.UMI_filteredED2.UMI_filtered.reads.tsv` - list of PCR deduplicated read idsl
-* `TEST_DATA.UMI_filteredED2.stats.tsv` - bried stats for PCR deduplication and read assignments;
+* `TEST_DATA.UMI_filtered.ED4.allinfo` - PCR deduplicated reads with barcodes and gene assignemts;
+* `TEST_DATA.UMI_filtered.ED4.stats.tsv` - bried stats for PCR deduplication and read assignments;
 * `TEST_DATA.read_assignments.tsv.gz` - read-to-isoform assignments; 
 * `TEST_DATA.corrected_reads.bed.gz` - read alignments after splice site correction;
 * `TEST_DATA.gene_counts.tsv, TEST_DATA.gene_tpm.tsv` - bulk gene counts/TPMs;
 * `TEST_DATA.transcript_counts.tsv, TEST_DATA.transcript_tpm.tsv` - bulk gene counts/TPMs;
-* `aux/TEST_DATA_ONT_798f05_d91ab7_5b7995.bam` - aligner reads.
 
 <a name="sec3.3"></a>
 ## Spl-IsoQuant output
@@ -311,17 +310,17 @@ If the output directory was not specified the files are stored in `isoquant_outp
 
 Output files are:
 
-* `SAMPLE_ID.barcoded_reads_#.tsv` - TSV files containing read ids, their respective barcodes and UMIs. A separate files is produced for every input files with reads.
+* `SAMPLE_ID.split_reads_#.fa` - FASTA file with cDNAs extracted from raw reads, one file per every input file.
+* `SAMPLE_ID.barcoded_reads_#.tsv` - TSV files containing read ids, their respective barcodes and UMIs, one file per every input file.
+* `SAMPLE_ID.UMI_filtered.ED4.allinfo` - a TSV files reads kept after PCR deduplication.
+   It contains all necessary information for downstream data analysis, such assigned gene, transcript, barcode, UMI etc.
+* `SAMPLE_ID.UMI_filtered.ED4.stats.tsv` - brief statistics for the PCD deduplication and the resulting TSV files.
 * `SAMPLE_ID.read_assignments.tsv.gz` - TSV file with read to isoform assignments (gzipped by default);
 * `SAMPLE_ID.corrected_reads.bed.gz` - BED file with corrected read alignments (gzipped by default);
 * `SAMPLE_ID.transcript_tpm.tsv` - TSV file with reference transcript expression in TPM;
 * `SAMPLE_ID.transcript_counts.tsv` - TSV file with raw read counts for reference transcript;
 * `SAMPLE_ID.gene_tpm.tsv` - TSV file with reference gene expression in TPM;
 * `SAMPLE_ID.gene_counts.tsv` - TSV file with raw read counts for reference genes;
-* `SAMPLE_ID.UMI_filteredED2.UMI_filtered.allinfo` - a TSV files reads kept after PCR deduplication.
-   It contains all necessary information for downstream Spl-Iso-Seq data analysis, such assigned gene, transcript, barcode, UMI etc.
-* `SAMPLE_ID.UMI_filteredED2.UMI_filtered.reads.tsv` - same as above, but contains only read ids.
-* `SAMPLE_ID.UMI_filteredED2.stats.tsv` - brief statistics for the PCD deduplication and the resulting TSV files. 
 
 
 Additionally, a log file will be saved to the directory.  
@@ -339,12 +338,13 @@ Although most output files include headers that describe the data, a brief expla
 * `barcode` - detected barcode sequence, `*` if not detected;
 * `UMI` - detected UMI sequence, `*` if not detected;
 * `BC_score` - barcode alignemnt score, `-1` if not detected;
-* `valid_UMI` - indicates whether UMI has the length similar to expected and has non-T nucleoties at the end (True/False);
+* `valid_UMI` - indicates whether UMI has the length similar to expected (True/False);
 * `strand` - read strand (+/-/.)
 * `polyT_start` - start position of the poly-T tail (`-1` if not detected);
 * `primer_end` - end position of the primer (`-1` if not detected);
 * `linker_start` - start position of the linker splitting the barcodes (`-1` if not detected);
 * `linker_end` - end position of the linker splitting the barcodes (`-1` if not detected);
+* `TSO5` - TSO position at the 5' end of the read (`-1` if not detected);
 
 #### UMI-filtered reads
 

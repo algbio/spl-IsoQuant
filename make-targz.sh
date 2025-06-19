@@ -6,7 +6,7 @@
 ############################################################################
 
 VERSION="$(cat ./VERSION)"
-TARGET_DIR=IsoQuant-$VERSION
+TARGET_DIR=Spl-IsoQuant-$VERSION
 rm -rf $TARGET_DIR
 mkdir $TARGET_DIR
 
@@ -22,10 +22,10 @@ rm -rf ./tests/.config/
 
 cp -r ./src $TARGET_DIR/
 cp -r ./tests $TARGET_DIR/
-cp -r ./figs $TARGET_DIR/
 
 
 cp splisoquant.py $TARGET_DIR/
+cp detect_barcodes.py $TARGET_DIR/
 cp README.md $TARGET_DIR/
 cp VERSION $TARGET_DIR/
 cp LICENSE $TARGET_DIR/

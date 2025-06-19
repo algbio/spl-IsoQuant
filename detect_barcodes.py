@@ -100,7 +100,6 @@ class BarcodeCaller:
             self.output_sequences.close()
 
     def process(self, input_file):
-        logger.info("Processing " + input_file)
         if self.output_sequences:
             self.output_sequences = open(self.output_sequences, "a")
         fname, outer_ext = os.path.splitext(os.path.basename(input_file))
