@@ -85,13 +85,14 @@ You will also need
 * [pandas](https://pandas.pydata.org/)
 * [pyyaml](https://pypi.org/project/PyYAML/)
 * [editdistance](https://pypi.org/project/editdistance/)
+* [ssw-py](https://pypi.org/project/ssw-py/)
 * [minimap2](https://github.com/lh3/minimap2)
 * [samtools](http://www.htslib.org/download/)
  
 
 <a name="sec2.1"></a>
 ## Installation and requirements
-To obtain Spl-IsoQuant you can download repository and install requirements.  
+To obtain Spl-IsoQuant you can download the repository and install requirements.  
 Clone Spl-IsoQuant repository and switch to the latest release:
 ```bash
 git clone https://github.com/algbio/spl-IsoQuant

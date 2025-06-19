@@ -43,7 +43,6 @@ from src.input_data_storage import InputDataStorage
 from src.multimap_resolver import MultimapResolvingStrategy
 from src.stats import combine_counts
 from detect_barcodes import process_single_thread, process_in_parallel
-from src.barcode_calling.umi_filtering import UMIFilter, create_transcript_info_dict, load_barcodes
 
 
 logger = logging.getLogger('IsoQuant')

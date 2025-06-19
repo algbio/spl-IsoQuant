@@ -4,6 +4,7 @@
 # See file LICENSE for details.
 ############################################################################
 
+import os
 import logging
 from collections import defaultdict
 
@@ -18,6 +19,15 @@ def increase_if_valid(val, delta):
     if val and val != -1:
         return val + delta
     return val
+
+
+def load_barcodes_iter(inf):
+    if inf.endswith("gz") or inf.endswith("gzip"):
+        handle = gzip.open(inf, "rt")
+    else:
+        handle = open(inf, "r")
+    for l in handle:
+        yield l.strip().split()[0]
 
 
 class BarcodeDetectionResult:
@@ -254,9 +264,22 @@ class StereoBarcodeDetector:
         self.pcr_primer_indexer = ArrayKmerIndexer([self.MAIN_PRIMER], kmer_size=6)
         self.linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=5)
         self.strict_linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=6)
-        bit_barcodes = map(str_to_2bit, barcodes)
-        self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
-        logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+
+        fsize = None
+        barcodes_iter = barcodes
+        if isinstance(barcodes, str):
+            fsize = os.path.getsize(barcodes)
+            barcodes_iter = load_barcodes_iter(barcodes)
+
+        if fsize is not None and fsize < 100000000:
+            logger.info("Indexing barcodes from %s" % barcodes)
+            self.barcode_indexer = KmerIndexer(barcodes_iter, kmer_size=14)
+            logger.info("Indexed %d barcodes" % len(self.barcode_indexer.seq_list))
+        else:
+            bit_barcodes = map(str_to_2bit, barcodes_iter)
+            self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
+            logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+
         self.umi_set = None
         self.min_score = min_score
 
@@ -432,11 +455,22 @@ class StereoSplttingBarcodeDetector:
         self.pcr_primer_indexer = ArrayKmerIndexer([self.MAIN_PRIMER], kmer_size=6)
         self.linker_indexer = ArrayKmerIndexer([self.LINKER], kmer_size=5)
         self.strict_linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=7)
-        #self.barcode_indexer = KmerIndexer(barcodes, kmer_size=14)
-        #logger.info("Indexed %d barcodes" % len(self.barcode_indexer.seq_list))
-        bit_barcodes = map(str_to_2bit, barcodes)
-        self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
-        logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+
+        fsize = None
+        barcodes_iter = barcodes
+        if isinstance(barcodes, str):
+            fsize = os.path.getsize(barcodes)
+            barcodes_iter = load_barcodes_iter(barcodes)
+
+        if fsize is not None and fsize < 100000000:
+            logger.info("Indexing barcodes from %s" % barcodes)
+            self.barcode_indexer = KmerIndexer(barcodes_iter, kmer_size=14)
+            logger.info("Indexed %d barcodes" % len(self.barcode_indexer.seq_list))
+        else:
+            bit_barcodes = map(str_to_2bit, barcodes_iter)
+            self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
+            logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+
         self.umi_set = None
         self.min_score = min_score
 
@@ -659,10 +693,13 @@ class DoubleBarcodeDetector:
     TERMINAL_MATCH_DELTA = 2
     STRICT_TERMINAL_MATCH_DELTA = 1
 
-    def __init__(self, joint_barcode_list, umi_list=None, min_score=13):
+    def __init__(self, barcodes, umi_list=None, min_score=13):
         self.pcr_primer_indexer = ArrayKmerIndexer([DoubleBarcodeDetector.PCR_PRIMER], kmer_size=6)
         self.linker_indexer = ArrayKmerIndexer([DoubleBarcodeDetector.LINKER], kmer_size=5)
-        self.barcode_indexer = ArrayKmerIndexer(joint_barcode_list, kmer_size=6)
+        barcode_list = barcodes
+        if isinstance(barcodes, str):
+            barcode_list = list(load_barcodes_iter(barcodes))
+        self.barcode_indexer = ArrayKmerIndexer(barcode_list, kmer_size=6)
         self.umi_set = None
         if umi_list:
             self.umi_set =  set(umi_list)
@@ -832,10 +869,14 @@ class IlluminaDoubleBarcodeDetector:
     TERMINAL_MATCH_DELTA = 1
     STRICT_TERMINAL_MATCH_DELTA = 0
 
-    def __init__(self, joint_barcode_list, umi_list=None, min_score=14):
+    def __init__(self, barcodes, umi_list=None, min_score=14):
         self.pcr_primer_indexer = KmerIndexer([DoubleBarcodeDetector.PCR_PRIMER], kmer_size=6)
         self.linker_indexer = KmerIndexer([DoubleBarcodeDetector.LINKER], kmer_size=5)
-        self.barcode_indexer = KmerIndexer(joint_barcode_list, kmer_size=5)
+        barcode_list = barcodes
+        if isinstance(barcodes, str):
+            barcode_list = list(load_barcodes_iter(barcodes))
+        self.barcode_indexer = ArrayKmerIndexer(barcode_list, kmer_size=6)
+        self.barcode_indexer = KmerIndexer(barcode_list, kmer_size=5)
         self.umi_set = None
         if umi_list:
             self.umi_set =  set(umi_list)
@@ -949,8 +990,12 @@ class TenXBarcodeDetector:
     TERMINAL_MATCH_DELTA = 2
     STRICT_TERMINAL_MATCH_DELTA = 1
 
-    def __init__(self, barcode_list, umi_list=None):
+    def __init__(self, barcodes, umi_list=None):
         self.r1_indexer = KmerIndexer([TenXBarcodeDetector.R1], kmer_size=7)
+        barcode_list = barcodes
+        if isinstance(barcodes, str):
+            barcode_list = list(load_barcodes_iter(barcodes))
+
         self.barcode_indexer = KmerIndexer(barcode_list, kmer_size=6)
         self.umi_set = None
         if umi_list:

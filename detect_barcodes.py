@@ -44,7 +44,6 @@ READ_CHUNK_SIZE = 100000
 BARCODE_CALLING_MODES = {'tenX': TenXBarcodeDetector,
                          'double': DoubleBarcodeDetector,
                          'double_illumina': IlluminaDoubleBarcodeDetector,
-                         'double_slow': BruteForceDoubleBarcodeDetector,
                          'stereo_pc': StereoBarcodeDetectorPC,
                          'stereo_split_pc': StereoSplitBarcodeDetectorPC,
 }
@@ -248,10 +247,9 @@ def process_chunk(barcode_detector, read_chunk, output_file, num, min_score=None
 
 def process_single_thread(args):
     logger.info("Loading barcodes from %s" % args.barcodes)
-    barcodes = load_barcodes_iter(args.barcodes)
     # logger.info("Loaded %d barcodes" % len(barcodes))
     logger.info("Preparing barcodes")
-    barcode_detector = BARCODE_CALLING_MODES[args.mode](barcodes)
+    barcode_detector = BARCODE_CALLING_MODES[args.mode](args.barcodes)
     if args.min_score:
         barcode_detector.min_score = args.min_score
     barcode_caller = BarcodeCaller(args.output, barcode_detector, header=True, output_sequences=args.out_fasta)
@@ -405,15 +403,6 @@ def load_h5_barcodes_bit(h5_file_path, dataset_name='bpMatrix_1'):
             for col in row:
                 barcode_list.append(bit_to_str(int(col[0])))
     return barcode_list
-
-
-def load_barcodes_iter(inf):
-    if inf.endswith("gz") or inf.endswith("gzip"):
-        handle = gzip.open(inf, "rt")
-    else:
-        handle = open(inf, "r")
-    for l in handle:
-        yield l.strip().split()[0]
 
 
 def set_logger(logger_instance, args):
