@@ -58,7 +58,7 @@ def find_candidate_with_max_score_ssw(barcode_matches: list, read_sequence, min_
 
     align_mgr = AlignmentMgr(match_score=1, mismatch_penalty=1)
     align_mgr.set_reference(read_sequence)
-    for barcode in barcode_matches.keys():
+    for barcode_match in barcode_matches:
         barcode = barcode_match[0]
         align_mgr.set_read(barcode)
         alignment = align_mgr.align(gap_open=1, gap_extension=1)
