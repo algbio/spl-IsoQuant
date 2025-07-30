@@ -30,7 +30,16 @@ Spl-IsoQuant is a forked version of [IsoQuant](https://github.com/ablab/IsoQuant
 
 For example, using the toy data provided within this repository
 
-        splisoquant.py --reference tests/splisoseq/GRCh38.chrX.fa.gz \
+        splisoquant.py --threads 1 --mode stereo_split_pc \
+        --fastq', os.path.join(source_dir, 'tests/stereo/S1.4K.subsample.fq.gz \
+        --barcode_whitelist', os.path.join(source_dir, 'tests/stereo/barcodes.tsv \
+        --reference', os.path.join(source_dir, 'tests/stereo/GRCm39.chrX.fa.gz \
+        --genedb', os.path.join(source_dir, 'tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf \
+        --clean_start --data_type nanopore --complete_genedb \
+        -p TEST_DATA --output splisoquant2_test 
+
+
+--reference tests/splisoseq/GRCh38.chrX.fa.gz \
         --genedb tests/splisoseq/ref.gtf --complete_genedb \
         --fastq tests/splisoseq/ONT.fasta.gz --barcode_whitelist tests/splisoseq/barcodes.tsv.gz \
         -d ont -p TEST -o splisoseq_test
