@@ -6,6 +6,7 @@
 
 import os
 import logging
+import gzip
 from collections import defaultdict
 
 from .kmer_indexer import KmerIndexer, ArrayKmerIndexer, Array2BitKmerIndexer
