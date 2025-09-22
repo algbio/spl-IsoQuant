@@ -88,7 +88,7 @@ def parse_args(cmd_args=None, namespace=None):
 
     parser.add_argument("--full_help", action='help', help="show full list of options")
 
-    parser.add_argument("--test", action=TestMode, nargs=0, help="run IsoQuant on toy dataset")
+    parser.add_argument("--test", action=TestMode, nargs=0, help="run Spl-IsoQuant on toy dataset")
     add_hidden_option('--debug', action='store_true', default=False,
                       help='Debug log output.')
 
@@ -150,15 +150,12 @@ def parse_args(cmd_args=None, namespace=None):
 
     # SC ARGUMENTS
     sc_args_group.add_argument("--mode", "-m", type=str, choices=ISOQUANT_MODES,
-                               help="IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
+                               help="Spl-IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
                                     "; default:%s" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
     sc_args_group.add_argument('--barcode_whitelist', type=str, nargs='+',
                                help='file with barcode whitelist for barcode calling')
     sc_args_group.add_argument("--barcoded_reads", type=str, nargs='+',
                                help='file with barcoded reads; barcodes will be called automatically if not provided')
-    sc_args_group.add_argument("--barcode_column", type=str,
-                               help='column with barcodes in barcoded_reads file, default=1; read id column is 0',
-                               default=1)
 
 
     # ALGORITHM
@@ -289,7 +286,7 @@ def parse_args(cmd_args=None, namespace=None):
             isoquant_version = version_f.readline().strip()
     except FileNotFoundError:
         pass
-    parser.add_argument('--version', '-v', action='version', version='IsoQuant ' + isoquant_version)
+    parser.add_argument('--version', '-v', action='version', version='Spl-IsoQuant ' + isoquant_version)
 
     args = parser.parse_args(cmd_args, namespace)
 
@@ -966,12 +963,12 @@ if __name__ == "__main__":
             print_exc(file=strout)
             s = strout.getvalue()
             if s:
-                logger.critical("IsoQuant failed with the following error, please, submit this issue to "
-                                "https://github.com/ablab/IsoQuant/issues\n" + s)
+                logger.critical("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                                "https://github.com/algbio/spl-IsoQuant/issues\n" + s)
             else:
                 print_exc()
         else:
             sys.stderr.write("IsoQuant failed with the following error, please, submit this issue to "
-                             "https://github.com/ablab/IsoQuant/issues\n")
+                             "https://github.com/algbio/spl-IsoQuant/issues\n")
             print_exc()
         sys.exit(-1)

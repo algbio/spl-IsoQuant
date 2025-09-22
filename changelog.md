@@ -1,5 +1,11 @@
 # Spl-IsoQuant changelog
 
+## Spl-IsoQuant 2.1.0, 22 September 2025
+
+Support for 10x Visium HD and Visium 3' data.
+
+Significant performance and usability improvements.
+
 ## Spl-IsoQuant 2.0.0, 19 June 2025
 
 Spl-IsoQuant 2 for Stereo-seq long read data.
