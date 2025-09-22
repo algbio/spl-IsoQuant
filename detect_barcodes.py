@@ -25,7 +25,7 @@ from src.barcode_calling.common import bit_to_str, reverese_complement
 from src.barcode_calling.barcode_callers import (
     TenXBarcodeDetector,
     DoubleBarcodeDetector,
-    StereoBarcodeDetectorPC,
+    SharedMemoryStereoBarcodeDetector,
     SharedMemoryStereoSplttingBarcodeDetector,
     ReadStats, 
     VisiumHDBarcodeDetector
@@ -38,7 +38,7 @@ READ_CHUNK_SIZE = 100000
 
 BARCODE_CALLING_MODES = {IsoQuantMode.tenX_v3: TenXBarcodeDetector,
                          IsoQuantMode.curio: DoubleBarcodeDetector,
-                         IsoQuantMode.stereoseq_nosplit: StereoBarcodeDetectorPC,
+                         IsoQuantMode.stereoseq_nosplit: SharedMemoryStereoBarcodeDetector,
                          IsoQuantMode.stereoseq: SharedMemoryStereoSplttingBarcodeDetector,
                          IsoQuantMode.visium_5prime: TenXBarcodeDetector,
                          IsoQuantMode.visium_hd: VisiumHDBarcodeDetector
@@ -281,7 +281,7 @@ def process_single_thread(args):
     barcode_caller.process(args.input)
     barcode_caller.dump_stats()
     for stat_line in barcode_caller.get_stats():
-        logger.info(stat_line)
+        logger.info("  " + stat_line)
     barcode_caller.close()
     logger.info("Finished barcode calling")
 

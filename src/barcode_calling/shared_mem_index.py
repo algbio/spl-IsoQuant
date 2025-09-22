@@ -4,6 +4,7 @@
 # See file LICENSE for details.
 ############################################################################
 import math
+
 import numpy
 from collections import defaultdict
 from multiprocessing import shared_memory
