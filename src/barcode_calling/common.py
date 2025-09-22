@@ -28,7 +28,7 @@ def find_polyt_start(seq, window_size = 16, polya_fraction = 0.75):
     if i >= len(seq) - window_size:
         return -1
 
-    return i + max(0, seq[i:].find('TTT'))
+    return i + max(0, seq[i:].find('TTTT'))
 
 
 base_comp = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N', " ": " "}
@@ -69,13 +69,13 @@ def find_candidate_with_max_score_ssw(barcode_matches: list, read_sequence, min_
             best_barcode = barcode
             second_best_score = best_match[0]
             best_match[0] = alignment.optimal_score
-            best_match[1] = alignment.reference_start
-            best_match[2] = alignment.reference_end
+            best_match[1] = alignment.reference_start - alignment.read_start
+            best_match[2] = alignment.reference_end + (len(barcode) - alignment.read_end)
         elif alignment.optimal_score  == best_match[0] and alignment.reference_start < best_match[1]:
             best_barcode = barcode
             second_best_score = best_match[0]
-            best_match[1] = alignment.reference_start
-            best_match[2] = alignment.reference_end
+            best_match[1] = alignment.reference_start - alignment.read_start
+            best_match[2] = alignment.reference_end + (len(barcode) - alignment.read_end)
 
         if alignment.optimal_score > sufficient_score > 0:
             # dirty hack to select first "sufficiently good" alignment

@@ -6,8 +6,7 @@
 ############################################################################
 
 import logging
-
-from Bio import Seq
+from .common import reverse_complement
 
 logger = logging.getLogger('IsoQuant')
 
@@ -177,7 +176,7 @@ class PolyAFinder:
         read_mapped_region_start = soft_clipped_head_len
         to_check_start = max(0, read_mapped_region_start - to_pos)
         to_check_end = min(len(seq), read_mapped_region_start + from_pos + 1)
-        sequence_to_check = str(Seq.Seq(alignment.seq[to_check_start:to_check_end]).reverse_complement()).upper()
+        sequence_to_check = reverse_complement(str(alignment.seq[to_check_start:to_check_end])).upper()
 
         pos = self.find_polya(sequence_to_check)
         #logger.debug("read start: %d, ckeck start: %d, check end: %d, pos: %d" % (read_mapped_region_start, to_check_start, to_check_end, pos))

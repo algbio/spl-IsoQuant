@@ -245,23 +245,13 @@ Note, that polyA tails are always required for reporting novel unspliced isoform
 Options below are shown only with `--full_help` option.
 We recommend _not_ to modify these options unless you are clearly aware of their effect.
 
+#### Pipeline settings
+
 `--no_gzip`
     Do not compress large output files.
 
 `--no_gtf_check`
     Do not perform input GTF checks.
-
-`--no_secondary`
-    Ignore secondary alignments.
-
-`--aligner`
-    Force to use this alignment method, can be `starlong` or `minimap2`; `minimap2` is currently used as default. Make sure the specified aligner is in the `$PATH` variable.
-
-`--no_junc_bed`
-    Do not use gene annotation for read mapping.
-
-`--junc_bed_file`
-    Annotation in BED12 format produced by `paftools.js gff2bed` (can be found in `minimap2`), will be created automatically if not given.
 
 `--delta`
     Delta for inexact splice junction comparison, chosen automatically based on data type (e.g. 4bp for PacBio, 6pb for ONT).
@@ -272,8 +262,31 @@ We recommend _not_ to modify these options unless you are clearly aware of their
     The folder will be created automatically.
 
 `--high_memory`
-    Cache read alignments instead for making several passes over a BAM file, noticeably increases RAM usage, 
-but may improve running time when disk I/O is relatively slow.
+    Cache read alignments instead for making several passes over a BAM file, noticeably increases RAM usage,
+    but may improve running time when disk I/O is relatively slow.
+
+
+#### Aligner settings
+
+`--aligner`
+    Force to use this alignment method, can be `starlong` or `minimap2`; `minimap2` is currently used as default. Make sure the specified aligner is in the `$PATH` variable.
+
+`--no_junc_bed`
+    Do not use gene annotation for read mapping.
+
+`--junc_bed_file`
+    Annotation in BED12 format produced by `paftools.js gff2bed` (can be found in `minimap2`), will be created automatically if not given.
+
+`--indexing_options`
+    Additional options that will be passed to the indexing command.
+
+`--mapping_options`
+    Additional options that will be passed to the aligner.
+
+#### Read filtering
+
+`--no_secondary`
+    Ignore secondary alignments.
 
 `--min_mapq`
     Filers out all alignments with MAPQ less than this value (will also filter all secondary alignments, as they typically have MAPQ = 0).
@@ -284,9 +297,12 @@ but may improve running time when disk I/O is relatively slow.
 `--simple_alignments_mapq_cutoff`
     Filers out alignments with 1 or 2 exons and MAPQ less than this value (works only in annotation-free mode, default is 1).
 
+
+#### Specific output options
+
 `--normalization_method`
     Method for normalizing non-grouped counts into TPMs:
-
+* `none` - do not perform TPM normalization;
 * `simple` - standard method, scale factor equals to 1 million divided by the counts sum (default);
 * `usable_reads` - includes all reads assigned to a feature including the ones that were filtered out
 during quantification (i.e. inconsistent or ambiguous);
@@ -296,8 +312,13 @@ Experiments with simulated data show that this method could give more accurate e
 However, normalization method does not affect correlation/relative proportions.
 
 `--counts_format`
-    Output format for grouped counts:
+    By default, IsoQuant outputs counts in internal linear format (see [formats](formats.md#expression-table-format) and [output](output.md#default-feature-counts-in-linear-format)).
+    Use this option to convert grouped counts to other format(s). You can provide a list with the following values:
 
-* `matrix` - usual format with genes as rows and groups as columns;
-* `linear` - linear format, each line contains gene/transcript id, group name and respective count value (no TPM output); 
-* `both` - output counts in both formats (default).
+* `matrix` - standard matrix format with genes as rows and groups as columns;
+* `mtx` - MTX format compatible with Seurat;
+* `default` - with small number of groups/samples (<=100), counts will be converted to standard matrix; 
+larger matrices (e.g. for single-cell experiments) will be saved to MTX (default).
+* `none` - no convertion.
+
+Note, that grouped counts can be converted to any format using `src/convert_grouped_counts.py`.

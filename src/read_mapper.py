@@ -8,10 +8,11 @@
 
 import logging
 import os
+import shutil
 import subprocess
 import json
 import pysam
-from io import StringIO
+import gzip
 
 from .common import get_path_to_program
 from .gtf2db import convert_db_to_gtf, db2bed
@@ -48,11 +49,11 @@ class DataSetReadMapper:
         if args.index and os.path.exists(args.index):
             return args.index
 
-        index = None if args.clean_start else find_stored_index(args)
+        index = None if args.clean_start else find_stored_index(args, self.aligner)
 
         if index is None:
             index = index_reference(self.aligner, args)
-            store_index(index, args)
+            store_index(index, args, self.aligner)
         return index
 
     def map_reads(self, args):
@@ -85,7 +86,7 @@ def get_aligner(aligner):
     return path
 
 
-def find_stored_index(args):
+def find_stored_index(args, aligner):
     reference_filename = os.path.abspath(args.reference)
 
     with open(args.index_config_path, 'r') as f_in:
@@ -97,16 +98,16 @@ def find_stored_index(args):
         return None
     index_mtime = converted_indexes.get(reference_filename, {}).get('index_mtime')
     reference_mtime = converted_indexes.get(reference_filename, {}).get('reference_mtime')
-    kmer_size = converted_indexes.get(reference_filename, {}).get('kmer_size')
+    used_aligner = converted_indexes.get(reference_filename, {}).get('aligner')
     if os.path.exists(reference_filename) and os.path.getmtime(reference_filename) == reference_mtime:
         if os.path.exists(index_filename) and os.path.getmtime(index_filename) == index_mtime:
-            if KMER_SIZE[args.data_type] == kmer_size:
+            if aligner + str(KMER_SIZE[args.data_type]) == used_aligner:
                 logger.info('Index file found. Using {}'.format(index_filename))
                 return index_filename
     return None
 
 
-def store_index(index, args):
+def store_index(index, args, aligner):
     reference_filename = os.path.abspath(args.reference)
     index = os.path.abspath(index)
 
@@ -116,7 +117,7 @@ def store_index(index, args):
         'index_filename': index,
         'reference_mtime': os.path.getmtime(reference_filename),
         'index_mtime': os.path.getmtime(index),
-        'kmer_size': KMER_SIZE[args.data_type]
+        'aligner': aligner + str(KMER_SIZE[args.data_type])
     }
     with open(args.index_config_path, 'w') as f_out:
         json.dump(converted_indexes, f_out)
@@ -218,6 +219,7 @@ def index_reference(aligner, args):
 
     command = ""
     index_name = os.path.join(os.path.abspath(args.output), "%s_k%s_idx" % (ref_name, KMER_SIZE[args.data_type]))
+
     if aligner == "starlong":
         if os.path.isdir(index_name) and os.path.exists(os.path.join(index_name, "genomeParameters.txt")):
             logger.debug('Reusing reference index ' + index_name)
@@ -227,6 +229,9 @@ def index_reference(aligner, args):
             os.makedirs(index_name)
         command = [exec_path, '--runMode', 'genomeGenerate', '--runThreadN', str(args.threads),
                    '--genomeDir', index_name, '--genomeFastaFiles', args.reference]
+        if args.indexing_options:
+            command += args.indexing_options.split()
+
     elif aligner == "minimap2":
         if os.path.isfile(index_name):
             logger.debug('Reusing reference index ' + index_name)
@@ -234,7 +239,12 @@ def index_reference(aligner, args):
         minimap2_path = get_aligner('minimap2')
         command = [minimap2_path, '-t', str(args.threads),
                    '-k', str(KMER_SIZE[args.data_type]),
-                   '-w', '5', '-d', index_name, args.reference]
+                   '-w', '5']
+
+        if args.indexing_options:
+            command += args.indexing_options.split()
+        command += ['-d', index_name, args.reference]
+
     else:
         logger.critical("Aligner " + aligner + " is not supported")
         exit(-1)
@@ -250,10 +260,27 @@ def index_reference(aligner, args):
 def find_annotation(aligner, args):
     if args.no_junc_bed:
         return None
+
     if aligner == "starlong":
-        if args.genedb.lower().endswith("db"):
-            return os.path.abspath(convert_db_to_gtf(args))
-        return os.path.abspath(args.genedb)
+        gene_annotation = args.genedb
+        if gene_annotation.lower().endswith("db"):
+            if args.original_annotation:
+                gene_annotation = args.original_annotation
+            else:
+                gene_annotation = os.path.abspath(convert_db_to_gtf(args))
+
+        if gene_annotation.lower().endswith("gz") or gene_annotation.lower().endswith("gzip"):
+            genedb_file_name = os.path.basename(gene_annotation)
+            genedb_name, _ = os.path.splitext(genedb_file_name)
+            gunzipped_genedb = os.path.join(args.output, genedb_name)
+            if not os.path.exists(gunzipped_genedb) or not args.resume:
+                logger.info("Decompressing genome annotation to " + str(gunzipped_genedb))
+                with open(gunzipped_genedb, "w") as outf:
+                    shutil.copyfileobj(gzip.open(gene_annotation, "rt"), outf)
+            gene_annotation = os.path.abspath(gunzipped_genedb)
+
+        return os.path.abspath(gene_annotation)
+
     elif aligner == "minimap2":
         bed_fname = None
         if args.junc_bed_file:
@@ -274,10 +301,9 @@ def find_annotation(aligner, args):
 
 
 def align_fasta(aligner, fastq_file, annotation_file, args, label, out_dir):
-    # TODO: fix paired end reads
     fastq_path = os.path.abspath(fastq_file)
     fname, ext = os.path.splitext(fastq_path.split('/')[-1])
-    alignment_prefix = os.path.join(out_dir, label)
+    alignment_prefix = str(os.path.join(out_dir, label))
 
     prefix_name = fname
     if prefix_name.endswith(".fq") or prefix_name.endswith(".fastq") or prefix_name.endswith(".fa") or prefix_name.endswith(".fasta"):
@@ -286,45 +312,32 @@ def align_fasta(aligner, fastq_file, annotation_file, args, label, out_dir):
     hash_index = ("%x" % hash(args.index))[2:8]
     hash_fastq = ("%x" % hash(fastq_path))[2:8]
 
-    alignment_bam_path = os.path.join(out_dir, label + '_' + prefix_name + '_%s_%s%s.bam' % (hash_fastq, hash_index, hash_annotation))
+    alignment_bam_path = str(os.path.join(out_dir, label + '_' + prefix_name + '_%s_%s%s.bam' % (hash_fastq, hash_index, hash_annotation)))
     logger.info("Aligning %s to the reference, alignments will be saved to %s" % (os.path.abspath(fastq_path),
                                                                                   os.path.abspath(alignment_bam_path)))
     alignment_sam_path = alignment_bam_path[:-4] + '.sam'
 
     log_fpath = os.path.join(args.output, "alignment.log")
     log_file = open(log_fpath, "a")
-    # TODO: add star for barcoded reads
+
     if aligner == "starlong":
         star_path = get_aligner('STARlong')
-        zcat_option = " --readFilesCommand zcat " if ext.endswith('gz') else ""
-
-        # Simple
+        zcat_option = ['--readFilesCommand', 'zcat'] if ext.endswith('gz') else []
         # command = '{star} --runThreadN 16 --genomeDir {ref_index_name}  --readFilesIn {transcripts}  --outSAMtype SAM
         #  --outFileNamePrefix {alignment_out}'.format(star=star_path, ref_index_name=star_index, transcripts=short_id_contigs_name, alignment_out=alignment_sam_path)
-        annotation_opts = "" if not annotation_file else " --sjdbGTFfile " + annotation_file + " --sjdbOverhang 140 "
-        command = '{exec_path} {zcat} --runThreadN {threads} --genomeDir {ref_index_name}  --readFilesIn {transcripts}  ' \
-                  '--outSAMtype BAM Unsorted --outSAMattributes NH HI NM MD --outFilterMultimapScoreRange 1 ' \
-                  '--outFilterMismatchNmax 2000 --scoreGapNoncan -20 --scoreGapGCAG -4 --scoreGapATAC -8 --scoreDelOpen ' \
-                  '-1 --scoreDelBase -1 --scoreInsOpen -1 --scoreInsBase -1 ' \
-                  ' --alignEndsType Local --seedSearchStartLmax 50 --seedPerReadNmax 1000000 --seedPerWindowNmax 1000 '\
-                  + annotation_opts + \
-                  ' --alignTranscriptsPerReadNmax 100000 --alignTranscriptsPerWindowNmax 10000 ' \
-                  '--outFileNamePrefix {alignment_out}'.format(exec_path=star_path,
-                                                               zcat=zcat_option,
-                                                               threads=str(args.threads),
-                                                               ref_index_name=args.index,
-                                                               transcripts=fastq_path,
-                                                               alignment_out=alignment_prefix)
+        annotation_opts = [] if not annotation_file else ['--sjdbGTFfile', annotation_file, '--sjdbOverhang', '140']
+        command = ([star_path, '--runThreadN', str(args.threads), '--genomeDir', args.index, '--readFilesIn',
+                   fastq_path, '--outSAMtype', 'BAM', 'SortedByCoordinate', '--seedPerReadNmax', '1000000',
+                   '--outBAMsortingThreadN', str(args.threads), '--outSAMattributes', 'NH', 'HI', 'NM', 'MD'] +
+                   annotation_opts + zcat_option + ['--outFileNamePrefix', alignment_prefix])
+        if args.mapping_options:
+            command += args.mapping_options.split()
+
         logger.info("Running STAR (takes a while)")
-        if subprocess.call(command.split(), stdout=log_file, stderr=log_file) != 0:
+        if subprocess.call(command, stdout=log_file, stderr=log_file) != 0:
             logger.critical("STAR finished with errors! See " + log_fpath)
             exit(-1)
-        logger.info("Sorting alignments")
-        try:
-            pysam.sort('-@', str(args.threads), '-o', alignment_bam_path, alignment_prefix + 'Aligned.out.bam')
-        except pysam.SamtoolsError as err:
-            logger.error(err.value)
-            exit(-1)
+        shutil.move(alignment_prefix + "Aligned.sortedByCoord.out.bam", alignment_bam_path)
 
     elif aligner == "minimap2":
         additional_options = []
@@ -338,6 +351,9 @@ def align_fasta(aligner, fastq_file, annotation_file, args, label, out_dir):
 
         command = [minimap2_path, args.index, fastq_path, '-a', '-x', MINIMAP_PRESET[args.data_type],
                    '--secondary=yes', '-Y', '--MD', '-t', str(args.threads)] + additional_options
+
+        if args.mapping_options:
+            command += args.mapping_options.split()
 
         minimap_version = "unknown"
         version_run = subprocess.run([minimap2_path, '--version'], capture_output=True)
@@ -362,6 +378,18 @@ def align_fasta(aligner, fastq_file, annotation_file, args, label, out_dir):
     logger.info("Indexing alignments")
     try:
         pysam.index(alignment_bam_path)
+    except pysam.SamtoolsError as err:
+        if "failed to create index" in err.value:
+            logger.info(f"Samtools failed to generate default .bai index; with error: {err.value}")
+            logger.info("Trying to build a CSI index instead")
+            try:
+                pysam.index('-@', str(args.threads), '-c', alignment_bam_path)
+            except pysam.SamtoolsError as err:
+                logger.error(f"Failed to create CSI index: {err.value}")
+                exit(-1)
+        else:
+            logger.error(err.value)
+            exit(-1) 
     except OSError as err:
         logger.error(err)
         exit(-1)

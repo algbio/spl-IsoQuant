@@ -15,6 +15,7 @@ import pickle
 import shutil
 import sys
 import time
+import gzip
 from collections import namedtuple
 from io import StringIO
 from traceback import print_exc
@@ -25,6 +26,7 @@ import pysam
 import gffutils
 import pyfaidx
 
+from src.modes import IsoQuantMode, ISOQUANT_MODES
 from src.gtf2db import convert_gtf_to_db
 from src.read_mapper import (
     DATA_TYPE_ALIASES,
@@ -35,10 +37,10 @@ from src.read_mapper import (
     NANOPORE_DATA,
     DataSetReadMapper
 )
-from src.dataset_processor import DatasetProcessor, PolyAUsageStrategies,  ISOQUANT_MODES, IsoQuantMode
+from src.dataset_processor import DatasetProcessor, PolyAUsageStrategies
 from src.graph_based_model_construction import StrandnessReportingLevel
 from src.long_read_assigner import AmbiguityResolvingMethod
-from src.long_read_counter import COUNTING_STRATEGIES, CountingStrategy, NormalizationMethod, GroupedOutputFormat
+from src.long_read_counter import COUNTING_STRATEGIES, CountingStrategy, GroupedOutputFormat, NormalizationMethod
 from src.input_data_storage import InputDataStorage
 from src.multimap_resolver import MultimapResolvingStrategy
 from src.stats import combine_counts
@@ -62,6 +64,9 @@ def parse_args(cmd_args=None, namespace=None):
     output_args_group = parser.add_argument_group('Output naming')
     pipeline_args_group = parser.add_argument_group('Pipeline options')
     algo_args_group = parser.add_argument_group('Algorithm settings')
+    output_setup_args_group = parser.add_argument_group('Output configuration')
+    align_args_group = parser.add_argument_group('Aligner settings')
+    filer_args_group = parser.add_argument_group('Read filtering options')
     sc_args_group = parser.add_argument_group('Single-cell/spatial-related options:')
 
     other_options = parser.add_argument_group("Additional options:")
@@ -82,6 +87,8 @@ def parse_args(cmd_args=None, namespace=None):
         parser.add_argument(*args, **kwargs)
 
     parser.add_argument("--full_help", action='help', help="show full list of options")
+
+    parser.add_argument("--test", action=TestMode, nargs=0, help="run IsoQuant on toy dataset")
     add_hidden_option('--debug', action='store_true', default=False,
                       help='Debug log output.')
 
@@ -103,6 +110,7 @@ def parse_args(cmd_args=None, namespace=None):
                                 help="use this flag if gene annotation contains transcript and gene metafeatures, "
                                      "e.g. with official annotations, such as GENCODE; "
                                      "speeds up gene database conversion")
+    ref_args_group.add_argument("--discard_chr", nargs="+", help="chromosome IDs to ignore", type=str, default=[])
     add_additional_option_to_group(ref_args_group, "--index", help="genome index for specified aligner (optional)",
                                    type=str)
 
@@ -112,7 +120,7 @@ def parse_args(cmd_args=None, namespace=None):
     input_args.add_argument('--bam', nargs='+', type=str,
                             help='sorted and indexed BAM file(s), each file will be treated as a separate sample')
     input_args.add_argument('--fastq', nargs='+', type=str,
-                            help='input FASTQ file(s), each file will be treated as a separate sample; '
+                            help='input FASTQ/FASTA file(s) with reads, each file will be treated as a separate sample; '
                                  'reference genome should be provided when using reads as input')
     add_additional_option_to_group(input_args,'--bam_list', type=str,
                                    help='text file with list of BAM files, one file per line, '
@@ -143,8 +151,8 @@ def parse_args(cmd_args=None, namespace=None):
     # SC ARGUMENTS
     sc_args_group.add_argument("--mode", "-m", type=str, choices=ISOQUANT_MODES,
                                help="IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
-                                    "; default:%s" % IsoQuantMode.stereo_split_pc.name, default=IsoQuantMode.stereo_split_pc.name)
-    sc_args_group.add_argument('--barcode_whitelist', type=str,
+                                    "; default:%s" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
+    sc_args_group.add_argument('--barcode_whitelist', type=str, nargs='+',
                                help='file with barcode whitelist for barcode calling')
     sc_args_group.add_argument("--barcoded_reads", type=str, nargs='+',
                                help='file with barcoded reads; barcodes will be called automatically if not provided')
@@ -161,7 +169,7 @@ def parse_args(cmd_args=None, namespace=None):
                                    choices=[e.name for e in StrandnessReportingLevel],
                                    help="reporting level for novel transcripts based on canonical splice sites;"
                                         " default: " + StrandnessReportingLevel.auto.name,
-                                   default=StrandnessReportingLevel.only_stranded.name)
+                                   default=StrandnessReportingLevel.auto.name)
     add_additional_option_to_group(algo_args_group, "--polya_requirement", type=str,
                                    choices=[e.name for e in PolyAUsageStrategies],
                                    help="require polyA tails to be present when reporting transcripts; "
@@ -187,82 +195,93 @@ def parse_args(cmd_args=None, namespace=None):
                                    choices=["reliable", "default_pacbio", "sensitive_pacbio", "fl_pacbio",
                                             "default_ont", "sensitive_ont", "all", "assembly"],
                                    help="transcript model construction strategy to use", type=str, default=None)
+    add_additional_option_to_group(algo_args_group, "--delta", type=int, default=None,
+                                   help="delta for inexact splice junction comparison, chosen automatically based on data type")
 
-    # OUTPUT PROPERTIES
-    pipeline_args_group.add_argument("--threads", "-t", help="number of threads to use", type=int,
-                                     default="16")
-    pipeline_args_group.add_argument('--check_canonical', action='store_true', default=False,
-                                     help="report whether splice junctions are canonical")
-    pipeline_args_group.add_argument("--sqanti_output", help="produce SQANTI-like TSV output",
-                                     action='store_true', default=False)
-    pipeline_args_group.add_argument("--count_exons", help="perform exon and intron counting",
-                                     action='store_true', default=False)
-    add_additional_option_to_group(pipeline_args_group,"--bam_tags",
-                                   help="comma separated list of BAM tags to be imported to read_assignments.tsv",
-                                   type=str)
 
     # PIPELINE STEPS
+    pipeline_args_group.add_argument("--threads", "-t", help="number of threads to use", type=int,
+                                     default="16")
+
     resume_args = pipeline_args_group.add_mutually_exclusive_group()
     resume_args.add_argument("--resume", action="store_true", default=False,
                              help="resume failed run, specify output folder, input options are not allowed")
     resume_args.add_argument("--force", action="store_true", default=False,
                              help="force to overwrite the previous run")
+
     add_additional_option_to_group(pipeline_args_group, '--clean_start', action='store_true', default=False,
                                    help='Do not use previously generated index, feature db or alignments.')
-
     add_additional_option_to_group(pipeline_args_group, "--no_model_construction", action="store_true",
                                    default=False, help="run only read assignment and quantification")
     add_additional_option_to_group(pipeline_args_group, "--run_aligner_only", action="store_true", default=False,
                                    help="align reads to reference without running further analysis")
-
-    # ADDITIONAL
-    add_additional_option("--delta", type=int, default=None,
-                          help="delta for inexact splice junction comparison, chosen automatically based on data type")
-    add_hidden_option("--graph_clustering_distance", type=int, default=None,
-                      help="intron graph clustering distance, "
-                           "splice junctions less that this number of bp apart will not be differentiated")
-    add_additional_option("--no_gzip", help="do not gzip large output files", dest="gzipped",
-                          action='store_false', default=True)
-    add_additional_option("--no_gtf_check", help="do not perform GTF checks", dest="gtf_check",
-                          action='store_false', default=True)
-    add_additional_option("--high_memory", help="increase RAM consumption (store alignment and the genome in RAM)",
-                          action='store_true', default=False)
-    add_additional_option("--no_junc_bed", action="store_true", default=False,
-                          help="do NOT use annotation for read mapping")
-    add_additional_option("--junc_bed_file", type=str,
-                          help="annotation in BED format produced by minimap's paftools.js gff2bed "
-                               "(will be created automatically if not given)")
-    add_additional_option("--no_secondary", help="ignore secondary alignments (not recommended)", action='store_true',
-                          default=False)
-    add_additional_option("--min_mapq", help="ignore alignments with MAPQ < this"
-                                             "(also filters out secondary alignments, default: None)", type=int)
-    add_additional_option("--inconsistent_mapq_cutoff", help="ignore inconsistent alignments with MAPQ < this "
-                                                             "(works only with the reference annotation, default=5)",
-                          type=int, default=5)
-    add_additional_option("--simple_alignments_mapq_cutoff", help="ignore alignments with 1 or 2 exons and "
-                                                                  "MAPQ < this (works only in annotation-free mode, "
-                                                                  "default=1)", type=int, default=1)
-    add_additional_option("--normalization_method", type=str, choices=[e.name for e in NormalizationMethod],
-                          help="TPM normalization method: simple - conventional normalization using all counted reads;"
-                               "usable_reads - includes all assigned reads.",
-                          default=NormalizationMethod.simple.name)
-    add_additional_option("--counts_format", type=str, choices=[e.name for e in GroupedOutputFormat],
-                          help="output format for grouped counts",
-                          default=GroupedOutputFormat.both.name)
-
+    add_additional_option_to_group(pipeline_args_group, "--no_gtf_check", help="do not perform GTF checks",
+                                   dest="gtf_check",
+                                   action='store_false', default=True)
+    add_additional_option_to_group(pipeline_args_group, "--high_memory",
+                                   help="increase RAM consumption (store alignment and the genome in RAM)",
+                                   action='store_true', default=False)
     add_additional_option_to_group(pipeline_args_group, "--keep_tmp", help="do not remove temporary files "
                                                                            "in the end", action='store_true',
                                    default=False)
-    add_additional_option_to_group(input_args_group, "--read_assignments", nargs='+', type=str,
-                                   help="reuse read assignments (binary format)", default=None)
-    add_hidden_option("--aligner", help="force to use this alignment method, can be " + ", ".join(SUPPORTED_ALIGNERS)
+
+    # OUTPUT SETUP
+    output_setup_args_group.add_argument('--check_canonical', action='store_true', default=False,
+                                     help="report whether splice junctions are canonical")
+    output_setup_args_group.add_argument("--sqanti_output", help="produce SQANTI-like TSV output",
+                                     action='store_true', default=False)
+    output_setup_args_group.add_argument("--count_exons", help="perform exon and intron counting",
+                                     action='store_true', default=False)
+    add_additional_option_to_group(output_setup_args_group,"--bam_tags",
+                                   help="comma separated list of BAM tags to be imported to read_assignments.tsv",
+                                   type=str)
+    add_additional_option_to_group(output_setup_args_group, "--no_gzip", help="do not gzip large output files", dest="gzipped",
+                                   action='store_false', default=True)
+    add_additional_option_to_group(output_setup_args_group, "--normalization_method", type=str, choices=[e.name for e in NormalizationMethod],
+                                   help="TPM normalization method: simple - conventional normalization using all counted reads;"
+                                        "usable_reads - includes all assigned reads;"
+                                        "none - do not convert counts to TPM.",
+                                   default=NormalizationMethod.simple.name)
+    add_additional_option_to_group(output_setup_args_group, "--counts_format", type=str, nargs='+',
+                                   choices=[e.name for e in GroupedOutputFormat],
+                                   help="output format for grouped counts",
+                                   default=[GroupedOutputFormat.default.name])
+
+    add_additional_option_to_group(output_setup_args_group, "--genedb_output", help="output folder for converted gene "
+                                                                                    "database, will be created automatically "
+                                                                                    " (same as output by default)", type=str)
+
+    # ALIGNER
+    add_additional_option_to_group(align_args_group, "--aligner", help="force to use this alignment method, can be " + ", ".join(SUPPORTED_ALIGNERS)
                                         + "; chosen based on data type if not set", type=str)
-    add_additional_option_to_group(output_args_group, "--genedb_output", help="output folder for converted gene "
-                                                                              "database, will be created automatically "
-                                                                              " (same as output by default)", type=str)
+    add_additional_option_to_group(align_args_group,  "--no_junc_bed", action="store_true", default=False,
+                          help="do NOT use annotation for read mapping")
+    add_additional_option_to_group(align_args_group, "--junc_bed_file", type=str,
+                          help="annotation in BED format produced by minimap's paftools.js gff2bed "
+                               "(will be created automatically if not given)")
+    add_additional_option_to_group(align_args_group, "--indexing_options", type=str,
+                                   help="additional options that will be passed to the aligindexerner indexer")
+    add_additional_option_to_group(align_args_group, "--mapping_options", type=str,
+                                   help="additional options that will be passed to the aligner")
+
+    # READ FILTERING
+    add_additional_option_to_group(filer_args_group, "--no_secondary", help="ignore secondary alignments (not recommended)",
+                                   action='store_true', default=False)
+    add_additional_option_to_group(filer_args_group, "--min_mapq", help="ignore alignments with MAPQ < this"
+                                                                        "(also filters out secondary alignments, default: None)", type=int)
+    add_additional_option_to_group(filer_args_group, "--inconsistent_mapq_cutoff", help="ignore inconsistent alignments with MAPQ < this "
+                                                                                        "(works only with the reference annotation, default=5)",
+                                   type=int, default=5)
+    add_additional_option_to_group(filer_args_group, "--simple_alignments_mapq_cutoff", help="ignore alignments with 1 or 2 exons and "
+                                                                                             "MAPQ < this (works only in annotation-free mode, "
+                                                                                             "default=1)", type=int, default=1)
+
+    # REST
+    add_hidden_option("--graph_clustering_distance", type=int, default=None,
+                      help="intron graph clustering distance, "
+                           "splice junctions less that this number of bp apart will not be differentiated")
     add_hidden_option("--cage", help="bed file with CAGE peaks", type=str, default=None)
     add_hidden_option("--cage-shift", type=int, default=50, help="interval before read start to look for CAGE peak")
-    parser.add_argument("--test", action=TestMode, nargs=0, help="run IsoQuant on toy dataset")
 
     isoquant_version = "3.4.0"
     try:
@@ -345,7 +364,7 @@ def check_and_load_args(args, parser):
     elif args.genedb.lower().endswith("db"):
         args.genedb_filename = args.genedb
     else:
-        args.genedb_filename = os.path.join(args.output, os.path.splitext(os.path.basename(args.genedb))[0] + ".db")
+        args.genedb_filename = os.path.join(args.genedb_output, os.path.splitext(os.path.basename(args.genedb))[0] + ".db")
 
     if not check_input_params(args):
         parser.print_usage()
@@ -445,7 +464,6 @@ def check_input_params(args):
     if not isinstance(args.mode, IsoQuantMode):
         args.mode = IsoQuantMode[args.mode]
     if args.mode.needs_barcode_calling():
-        args.no_model_construction = True
         if not args.genedb:
             logger.warning("Using single-cell/spatial mode requires gene annotation")
         if not args.barcode_whitelist and not args.barcoded_reads:
@@ -765,6 +783,32 @@ def set_additional_params(args):
         args.bam_tags = args.bam_tags.split(",")
     else:
         args.bam_tags = []
+    args.original_annotation = None
+
+
+def prepare_reference_genome(args):
+    if not args.needs_reference:
+        return
+    logger.info("Reading reference genome from %s" % args.reference)
+    ref_dir = os.path.dirname(args.reference)
+    ref_file_name = os.path.basename(args.reference)
+    ref_name, outer_ext = os.path.splitext(ref_file_name)
+
+    # make symlink for pyfaidx index
+    args.fai_file_name = args.reference + ".fai"
+    if not os.path.exists(args.fai_file_name) and not os.access(ref_dir, os.W_OK):
+        # index does not exist near the reference and reference folder is not writable
+        # store index in the output folder in this case
+        args.fai_file_name = os.path.join(args.output, ref_file_name + ".fai")
+
+    low_ext = outer_ext.lower()
+    if low_ext in ['.gz', '.gzip', '.bgz']:
+        gunzipped_reference = os.path.join(args.output, ref_name)
+        if not os.path.exists(gunzipped_reference) or not args.resume:
+            logger.info("Decompressing reference to " + str(gunzipped_reference))
+            with open(gunzipped_reference, "w") as outf:
+                shutil.copyfileobj(gzip.open(args.reference, "rt"), outf)
+        args.reference = gunzipped_reference
 
 
 class BarcodeCallingArgs:
@@ -772,7 +816,7 @@ class BarcodeCallingArgs:
         self.input = input
         self.barcodes = barcode_whitelist
         self.mode = mode
-        self.output = output
+        self.output_tsv = output
         self.out_fasta = out_fasta
         self.tmp_dir = tmp_dir
         self.threads = threads
@@ -785,20 +829,20 @@ def call_barcodes(args):
             new_reads = []
             for i, files in enumerate(sample.file_list):
                 output_barcodes = sample.barcodes_tsv + "_%d.tsv" % i
+                barcodes_done = sample.barcodes_done + "_%d.tsv" % i
+
                 output_fasta = None
-                if args.mode.produces_new_fasta:
-                    if args.input_data.input_type == 'bam':
-                        logger.critical("%s mode splits reads and produces new FASTA file, but BAM files are provided. "
-                                        "Provide original FASTQ/FASTA or ")
-                        exit(-1)
+                if args.mode.produces_new_fasta():
                     output_fasta = sample.split_reads_fasta + "_%d.fa" % i
                     new_reads.append([output_fasta])
-                bc_threads = 1 if args.mode.enforces_single_thread else args.threads
-                if args.resume and os.path.exists(output_barcodes):
-                    # FIXME could be incomplete barcode calling run
-                    logger.info("Barcodes were called during the previous run, skipping")
+                bc_threads = 1 if args.mode.enforces_single_thread() else args.threads
+                if os.path.exists(barcodes_done):
+                    if args.resume:
+                        logger.info("Barcodes were called during the previous run, skipping")
+                    else:
+                        os.remove(barcodes_done)
                 else:
-                    bc_args = BarcodeCallingArgs(files[0], args.barcode_whitelist, args.mode.name,
+                    bc_args = BarcodeCallingArgs(files[0], args.barcode_whitelist, args.mode,
                                                  output_barcodes, output_fasta, sample.aux_dir, bc_threads)
                     # Launching barcode calling in a separate process has the following reason:
                     # Read chunks are not cleared by the GC in the end of barcode calling, leaving the main
@@ -816,9 +860,10 @@ def call_barcodes(args):
                         raise future_res.exception()
 
                 sample.barcoded_reads.append(output_barcodes)
+                open(barcodes_done, "w").close()
                 logger.info("Processed %s, barcodes are stored in %s" % (files[0], output_barcodes))
 
-            if args.mode.produces_new_fasta:
+            if args.mode.produces_new_fasta():
                 logger.info("Reads were split during barcode calling")
                 logger.info("The following files will be used instead of original reads %s " % ", ".join(map(lambda x: x[0], new_reads)))
                 sample.file_list = new_reads
@@ -829,6 +874,7 @@ def call_barcodes(args):
 
 def run_pipeline(args):
     logger.info(" === Spl-IsoQuant pipeline started === ")
+    logger.info("Python version: %s" % sys.version)
     logger.info("gffutils version: %s" % gffutils.__version__)
     logger.info("pysam version: %s" % pysam.__version__)
     logger.info("pyfaidx version: %s" % pyfaidx.__version__)
@@ -836,8 +882,12 @@ def run_pipeline(args):
         # call barcodes
         call_barcodes(args)
 
+    # gunzip refernece genome if needed
+    prepare_reference_genome(args)
+
     # convert GTF/GFF if needed
     if args.genedb and not args.genedb.lower().endswith('db'):
+        args.original_annotation = args.genedb
         args.genedb = convert_gtf_to_db(args)
 
     # map reads if fastqs are provided
@@ -920,11 +970,11 @@ if __name__ == "__main__":
             s = strout.getvalue()
             if s:
                 logger.critical("IsoQuant failed with the following error, please, submit this issue to "
-                                "https://github.com/ablab/IsoQuant/issues" + s)
+                                "https://github.com/ablab/IsoQuant/issues\n" + s)
             else:
                 print_exc()
         else:
             sys.stderr.write("IsoQuant failed with the following error, please, submit this issue to "
-                             "https://github.com/ablab/IsoQuant/issues")
+                             "https://github.com/ablab/IsoQuant/issues\n")
             print_exc()
         sys.exit(-1)

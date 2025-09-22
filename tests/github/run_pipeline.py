@@ -91,12 +91,13 @@ def run_isoquant(args, config_dict):
 
     run_name = config_dict["name"]
     output_folder = os.path.join(args.output if args.output else config_dict["output"], run_name)
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
+    os.makedirs(output_folder)
+
     if "resume" in config_dict:
         assert "label" in config_dict
-        if os.path.exists(output_folder):
-            shutil.rmtree(output_folder)
-        os.makedirs(output_folder)
-        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "splisoquant.py"), "-o", output_folder, "--resume"]
+        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "isoquant.py"), "-o", output_folder, "--resume"]
         src_dir = fix_path(config_file, config_dict["resume"])
         for f in os.listdir(src_dir):
             fpath = os.path.join(src_dir, f)
