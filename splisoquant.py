@@ -916,7 +916,7 @@ class TestMode(argparse.Action):
         if os.path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
         source_dir = os.path.dirname(os.path.realpath(__file__))
-        options = ['--output', self.out_dir, '--threads', '1', '--mode', 'stereoseq',
+        options = ['--output', self.out_dir, '--threads', '2', '--mode', 'stereoseq',
                    '--fastq', os.path.join(source_dir, 'tests/stereo/S1.4K.subsample.fq.gz'),
                    '--barcode_whitelist', os.path.join(source_dir, 'tests/stereo/barcodes.tsv'),
                    '--reference', os.path.join(source_dir, 'tests/stereo/GRCm39.chrX.fa.gz'),

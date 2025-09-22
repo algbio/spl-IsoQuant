@@ -391,7 +391,7 @@ def process_in_parallel(args):
 
     with open(stats_file_name(args.output_tsv), "w") as out_stats:
         for k, v in stat_dict.items():
-            logger.info("%s: %d" % (k, v))
+            logger.info("  %s: %d" % (k, v))
             out_stats.write("%s\t%d\n" % (k, v))
     shutil.rmtree(tmp_dir)
     logger.info("Finished barcode calling")

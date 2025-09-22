@@ -672,11 +672,11 @@ class SharedMemoryStereoSplttingBarcodeDetector(StereoSplttingBarcodeDetector):
         if self.barcode_count < self.MIN_BARCODES_FOR_SHARED_MEM:
             return (self.min_score,
                     self.barcode_count,
-                    self.barcode_indexer.get_sharable_info())
+                    self.barcodes)
         else:
             return (self.min_score,
                     self.barcode_count,
-                    self.barcodes)
+                    self.barcode_indexer.get_sharable_info())
 
     def __setstate__(self, state):
         self.min_score = state[0]
