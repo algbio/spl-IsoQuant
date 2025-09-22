@@ -10,7 +10,7 @@ from collections import defaultdict
 
 from .kmer_indexer import KmerIndexer, ArrayKmerIndexer, Array2BitKmerIndexer
 from .common import find_polyt_start, reverese_complement, find_candidate_with_max_score_ssw, detect_exact_positions, \
-    detect_first_exact_positions, str_to_2bit
+    detect_first_exact_positions, str_to_2bit, bit_to_str
 from .shared_mem_index import SharedMemoryArray2BitKmerIndexer
 
 logger = logging.getLogger('IsoQuant')
@@ -264,20 +264,9 @@ class StereoBarcodeDetector:
         self.linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=5)
         self.strict_linker_indexer = ArrayKmerIndexer([StereoBarcodeDetector.LINKER], kmer_size=6)
 
-        fsize = None
-        barcodes_iter = barcodes
-        if isinstance(barcodes, str):
-            fsize = os.path.getsize(barcodes)
-            barcodes_iter = load_barcodes_iter(barcodes)
-
-        if fsize is not None and fsize < 100000000:
-            logger.info("Indexing barcodes from %s" % barcodes)
-            self.barcode_indexer = KmerIndexer(barcodes_iter, kmer_size=14)
-            logger.info("Indexed %d barcodes" % len(self.barcode_indexer.seq_list))
-        else:
-            bit_barcodes = map(str_to_2bit, barcodes)
-            self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
-            logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+        bit_barcodes = map(str_to_2bit, barcodes)
+        self.barcode_indexer = Array2BitKmerIndexer(bit_barcodes, kmer_size=14, seq_len=self.BC_LENGTH)
+        logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
 
         self.umi_set = None
         self.min_score = min_score
@@ -662,22 +651,43 @@ class StereoSplttingBarcodeDetector:
 
 
 class SharedMemoryStereoSplttingBarcodeDetector(StereoSplttingBarcodeDetector):
+    MIN_BARCODES_FOR_SHARED_MEM = 1000000
+
     def __init__(self, barcodes, min_score=21):
         super().__init__([], min_score=min_score)
         bit_barcodes = list(map(str_to_2bit, barcodes))
-        self.barcode_indexer = SharedMemoryArray2BitKmerIndexer(bit_barcodes, kmer_size=14,
-                                                                seq_len=super().BC_LENGTH)
+        self.barcode_count = len(bit_barcodes)
+        self.barcodes = []
+        if self.barcode_count < self.MIN_BARCODES_FOR_SHARED_MEM:
+            # workaroun for --test and small barcode sets (which cannot happen in practice)
+            self.barcode_indexer = KmerIndexer(list(map(lambda x: bit_to_str(x, self.BC_LENGTH), bit_barcodes)), kmer_size=14)
+            self.barcodes = self.barcode_indexer.seq_list
+        else:
+            self.barcode_indexer = SharedMemoryArray2BitKmerIndexer(bit_barcodes, kmer_size=14,
+                                                                    seq_len=super().BC_LENGTH)
 
-        logger.info("Indexed %d barcodes" % self.barcode_indexer.total_sequences)
+        logger.info("Indexed %d barcodes" % self.barcode_count)
 
     def __getstate__(self):
-        return (self.min_score,
-                self.barcode_indexer.get_sharable_info())
+        if self.barcode_count < self.MIN_BARCODES_FOR_SHARED_MEM:
+            return (self.min_score,
+                    self.barcode_count,
+                    self.barcode_indexer.get_sharable_info())
+        else:
+            return (self.min_score,
+                    self.barcode_count,
+                    self.barcodes)
 
     def __setstate__(self, state):
         self.min_score = state[0]
         super().__init__([], min_score=self.min_score)
-        self.barcode_indexer = SharedMemoryArray2BitKmerIndexer.from_sharable_info(state[1])
+        self.barcodes = []
+        self.barcode_count = state[1]
+        if self.barcode_count < self.MIN_BARCODES_FOR_SHARED_MEM:
+            self.barcodes = state[2]
+            self.barcode_indexer = KmerIndexer(self.barcodes, kmer_size=14)
+        else:
+            self.barcode_indexer = SharedMemoryArray2BitKmerIndexer.from_sharable_info(state[2])
 
 
 class SharedMemoryWrapper:

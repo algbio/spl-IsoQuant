@@ -248,7 +248,7 @@ def process_chunk(barcode_detector, read_chunk, output_file, num, out_fasta=None
     return output_file, out_fasta, counter
 
 
-def process_single_thread(args):
+def prepare_barcodes(args):
     logger.info("Using barcodes from %s" % ", ".join(args.barcodes))
     barcode_files = len(args.barcodes)
     if barcode_files not in BARCODE_FILES_REQUIRED[args.mode]:
@@ -268,8 +268,12 @@ def process_single_thread(args):
             for i, bc in enumerate(barcodes):
                 logger.info("Loaded %d barcodes from %s" % (len(bc), args.barcodes[i]))
         barcodes = tuple(barcodes)
+    return barcodes
 
+
+def process_single_thread(args):
     logger.info("Preparing barcodes indices")
+    barcodes = prepare_barcodes(args)
     barcode_detector = BARCODE_CALLING_MODES[args.mode](barcodes)
     if args.min_score:
         barcode_detector.min_score = args.min_score
@@ -312,26 +316,7 @@ def process_in_parallel(args):
         tmp_dir = os.path.join(args.tmp_dir, tmp_dir)
     os.makedirs(tmp_dir)
 
-    logger.info("Using barcodes from %s" % ", ".join(args.barcodes))
-    barcode_files = len(args.barcodes)
-    if barcode_files not in BARCODE_FILES_REQUIRED[args.mode]:
-        logger.critical("Barcode calling mode %s requires %s files, %d provided" %
-                        (args.mode.name, " or ".join([str(x) for x in BARCODE_FILES_REQUIRED[args.mode]]), barcode_files))
-        exit(-3)
-    barcodes = []
-    for bc in args.barcodes:
-        barcodes.append(load_barcodes(bc, needs_iterator=args.mode.needs_barcode_iterator()))
-
-    if len(barcodes) == 1:
-        barcodes = barcodes[0]
-        if not args.mode.needs_barcode_iterator():
-            logger.info("Loaded %d barcodes" % len(barcodes))
-    else:
-        if not args.mode.needs_barcode_iterator():
-            for i, bc in enumerate(barcodes):
-                logger.info("Loaded %d barcodes from %s" % (len(bc), args.barcodes[i]))
-        barcodes = tuple(barcodes)
-
+    barcodes = prepare_barcodes(args)
     barcode_detector = BARCODE_CALLING_MODES[args.mode](barcodes)
     logger.info("Barcode caller created")
 

@@ -30,7 +30,7 @@ Spl-IsoQuant is a forked version of [IsoQuant](https://github.com/ablab/IsoQuant
 
 For example, using the toy data provided within this repository
 
-        splisoquant.py --threads 1 --mode stereo_split_pc \
+        splisoquant.py --threads 1 --mode stereoseq \
         --fastq', os.path.join(source_dir, 'tests/stereo/S1.4K.subsample.fq.gz \
         --barcode_whitelist', os.path.join(source_dir, 'tests/stereo/barcodes.tsv \
         --reference', os.path.join(source_dir, 'tests/stereo/GRCm39.chrX.fa.gz \

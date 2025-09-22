@@ -293,6 +293,7 @@ def parse_args(cmd_args=None, namespace=None):
 
     args = parser.parse_args(cmd_args, namespace)
 
+    args.read_assignments = None
     if args.resume:
         resume_parser = argparse.ArgumentParser(add_help=False)
         resume_parser.add_argument("--resume", action="store_true", default=False,
@@ -391,7 +392,7 @@ def load_previous_run(args):
 
 def save_params(args):
     for file_opt in ["genedb", "reference", "index", "bam", "fastq", "bam_list", "fastq_list", "junc_bed_file",
-                     "cage", "genedb_output", "read_assignments"]:
+                     "cage", "genedb_output"]:
         if file_opt in args.__dict__ and args.__dict__[file_opt]:
             if isinstance(args.__dict__[file_opt], list):
                 args.__dict__[file_opt] = list(map(os.path.abspath, args.__dict__[file_opt]))
@@ -422,7 +423,7 @@ def check_input_params(args):
         return False
     args.data_type = DATA_TYPE_ALIASES[args.data_type]
 
-    if not args.fastq and not args.fastq_list and not args.bam and not args.bam_list and not args.read_assignments and not args.yaml:
+    if not args.fastq and not args.fastq_list and not args.bam and not args.bam_list and not args.yaml:
         logger.error("No input data was provided")
         return False
 
@@ -514,12 +515,6 @@ def check_input_files(args):
             exit(-1)
     else:
         args.no_junc_bed = True
-
-    if args.read_assignments is not None:
-        for r in args.read_assignments:
-            if not glob.glob(r + "*"):
-                logger.critical("No files found with prefix " + str(r))
-                exit(-1)
 
 
 def create_output_dirs(args):
@@ -919,7 +914,7 @@ class TestMode(argparse.Action):
         if os.path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
         source_dir = os.path.dirname(os.path.realpath(__file__))
-        options = ['--output', self.out_dir, '--threads', '1', '--mode', 'stereo_split_pc',
+        options = ['--output', self.out_dir, '--threads', '1', '--mode', 'stereoseq',
                    '--fastq', os.path.join(source_dir, 'tests/stereo/S1.4K.subsample.fq.gz'),
                    '--barcode_whitelist', os.path.join(source_dir, 'tests/stereo/barcodes.tsv'),
                    '--reference', os.path.join(source_dir, 'tests/stereo/GRCm39.chrX.fa.gz'),
