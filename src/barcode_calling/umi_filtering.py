@@ -360,9 +360,6 @@ class UMIFilter:
             if unique and spliced:
                 self.stats["Uniquely assigned and spliced and barcoded"] += 1
 
-        if assigned and barcoded:
-            self.unique_gene_barcode.add((read_infos[0].gene_id, read_infos[0].barcode))
-
     def process(self, assignment_file, output_prefix, transcript_type_dict):
         outf = open(output_prefix + ".reads_ids.tsv", "w")
         allinfo_outf = open(output_prefix + ".allinfo", "w")
@@ -461,7 +458,6 @@ class UMIFilter:
             count_hist_file.write("Duplicate counts: %s \n" % ", ".join(["%d: %d" % (x, self.duplicated_molecule_counts[x]) for x in sorted(self.duplicated_molecule_counts.keys())]))
             for k in sorted(self.stats.keys()):
                 count_hist_file.write("%s\t%d\n" % (k, self.stats[k]))
-
 
     @staticmethod
     def load_barcodes_simple(barcode_file):
@@ -619,39 +615,6 @@ class UMIFilter:
                 count_hist_file.write("%s\t%d\n" % (k, self.stats[k]))
 
         return allinfo_outf, stats_output
-
-    def count_stats(self, assignment_file, output_prefix):
-        read_info_storage = defaultdict(list)
-
-        self.unique_gene_barcode = set()
-        for l in open(assignment_file):
-            if l.startswith("#"): continue
-            v = l.strip().split("\t")
-            read_id = v[0]
-            gene_id = v[4]
-            assignment_type = v[5]
-            exon_blocks_str = v[7]
-            exon_blocks = list(map(lambda x: tuple(map(int, x.split('-'))), exon_blocks_str.split(',')))
-            if read_id in self.barcode_dict:
-                barcode, umi = self.barcode_dict[read_id]
-            else:
-                barcode, umi = None, None
-            matching_events = v[6]
-            read_info_storage[read_id].append(ShortReadAssignmentInfo(gene_id, exon_blocks, assignment_type,
-                                                                      matching_events, barcode))
-
-        self.count_stats_for_storage(read_info_storage)
-        logger.info("Unique gene-barcodes pairs %d" % len(self.unique_gene_barcode))
-        for k in sorted(self.stats.keys()):
-            logger.info("%s: %d" % (k, self.stats[k]))
-
-        stats_output = output_prefix + ".stats.tsv"
-        logger.info("Stats are written to written to %s" % stats_output)
-        with open(stats_output, "w") as count_hist_file:
-            count_hist_file.write("Unique gene-barcodes pairs %d\n" % len(self.unique_gene_barcode))
-
-            for k in sorted(self.stats.keys()):
-                count_hist_file.write("%s\t%d\n" % (k, self.stats[k]))
 
 
 def filter_bam(in_file_name, out_file_name, read_set):
