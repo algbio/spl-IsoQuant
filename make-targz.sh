@@ -18,11 +18,11 @@ rm -f */*/*.pyc
 rm -f */*/*.pyo
 rm -rf */*/__pycache__/
 rm -rf ./tests/out*/
-rm -rf ./tests/curio/
 rm -rf ./tests/.config/
 
 cp -r ./src $TARGET_DIR/
 cp -r ./tests $TARGET_DIR/
+rm -rf $TARGET_DIR/tests/curio/
 
 
 cp splisoquant.py $TARGET_DIR/
