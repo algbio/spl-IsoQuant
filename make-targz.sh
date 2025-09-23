@@ -18,6 +18,7 @@ rm -f */*/*.pyc
 rm -f */*/*.pyo
 rm -rf */*/__pycache__/
 rm -rf ./tests/out*/
+rm -rf ./tests/curio/
 rm -rf ./tests/.config/
 
 cp -r ./src $TARGET_DIR/
