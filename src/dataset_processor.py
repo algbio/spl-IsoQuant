@@ -8,7 +8,6 @@
 import glob
 import itertools
 import logging
-import os
 import shutil
 from enum import Enum, unique
 from collections import defaultdict
@@ -16,12 +15,11 @@ from concurrent.futures import ProcessPoolExecutor
 
 import gffutils
 import pysam
-from pyfaidx import Fasta, UnsupportedCompressionFormat
+from pyfaidx import Fasta
 
-from .modes import IsoQuantMode, ISOQUANT_MODES
+from .modes import IsoQuantMode
 from .common import proper_plural_form
 from .serialization import *
-from .isoform_assignment import BasicReadAssignment, ReadAssignmentType
 from .stats import EnumStats
 from .file_utils import merge_files, merge_counts
 from .input_data_storage import SampleData
@@ -33,7 +31,6 @@ from .long_read_counter import (
     create_gene_counter,
     create_transcript_counter,
 )
-from .multimap_resolver import MultimapResolver
 from .read_groups import (
     create_read_grouper,
     prepare_read_groups
@@ -46,6 +43,8 @@ from .assignment_io import (
     BasicTSVAssignmentPrinter,
     TmpFileAssignmentPrinter,
 )
+from .read_assignment_loader import BasicReadAssignmentLoader
+from .processed_read_manager import ProcessedReadsManagerHighMemory, ProcessedReadsManagerNoSecondary, ProcessedReadsManagerNormalMemory
 from .id_policy import SimpleIDDistributor, ExcludingIdDistributor, FeatureIdStorage
 from .file_naming import *
 from .transcript_printer import GFFPrinter, VoidTranscriptPrinter, create_extended_storage
@@ -73,7 +72,7 @@ def set_polya_requirement_strategy(flag, polya_requirement_strategy):
         return True
 
 
-def collect_reads_in_parallel(sample, chr_id, args):
+def collect_reads_in_parallel(sample, chr_id, args, processed_read_manager_type):
     current_chr_record = Fasta(args.reference, indexname=args.fai_file_name)[chr_id]
     if args.high_memory:
         current_chr_record = str(current_chr_record)
@@ -82,13 +81,7 @@ def collect_reads_in_parallel(sample, chr_id, args):
     save_file = saves_file_name(sample.out_raw_file, chr_id)
     group_file = save_file + "_groups"
     bamstat_file = save_file + "_bamstat"
-    processed_reads = []
-    if args.high_memory:
-        def collect_assignment_info(ra): return BasicReadAssignment(ra)
-        def load_assignment_info(ra): return ra
-    else:
-        def collect_assignment_info(ra): return ra.read_id
-        def load_assignment_info(ra): return ra.read_id
+    processed_reads_manager = processed_read_manager_type(sample, args.multimap_strategy)
 
     if os.path.exists(lock_file) and args.resume:
         logger.info("Detected processed reads for " + chr_id)
@@ -101,9 +94,9 @@ def collect_reads_in_parallel(sample, chr_id, args):
             while loader.has_next():
                 for read_assignment in loader.get_next():
                     if read_assignment is None: continue
-                    processed_reads.append(load_assignment_info(read_assignment))
+                    processed_reads_manager.load_read(read_assignment)
             logger.info("Loaded data for " + chr_id)
-            return read_grouper.read_groups, alignment_stat_counter, processed_reads
+            return chr_id, read_grouper.read_groups, alignment_stat_counter, processed_reads_manager
         else:
             logger.warning("Something is wrong with save files for %s, will process from scratch " % chr_id)
             if not os.path.exists(group_file):
@@ -111,6 +104,9 @@ def collect_reads_in_parallel(sample, chr_id, args):
             if not os.path.exists(save_file):
                 logger.warning("%s does not exist" % save_file)
             os.remove(lock_file)
+
+    if os.path.exists(lock_file):
+        os.remove(lock_file)
 
     if os.path.exists(lock_file):
         os.remove(lock_file)
@@ -123,25 +119,28 @@ def collect_reads_in_parallel(sample, chr_id, args):
 
     logger.info("Processing chromosome " + chr_id)
     alignment_collector = \
-        AlignmentCollector(chr_id, bam_file_pairs, args, illumina_bam, gffutils_db, current_chr_record, read_grouper)
+        AlignmentCollector(chr_id, bam_file_pairs, args, illumina_bam, gffutils_db, current_chr_record, read_grouper,
+                           args.max_coverage_small_chr, args.max_coverage_normal_chr)
 
     for gene_info, assignment_storage in alignment_collector.process():
         tmp_printer.add_gene_info(gene_info)
         for read_assignment in assignment_storage:
             tmp_printer.add_read_info(read_assignment)
-            processed_reads.append(collect_assignment_info(read_assignment))
+            processed_reads_manager.add_read(read_assignment)
     with open(group_file, "w") as group_dump:
         for g in read_grouper.read_groups:
             group_dump.write("%s\n" % g)
     alignment_collector.alignment_stat_counter.dump(bamstat_file)
 
-    logger.info("Finished processing chromosome " + chr_id)
-    open(lock_file, "w").close()
     for bam in bam_file_pairs:
         bam[0].close()
 
-    return read_grouper.read_groups, alignment_collector.alignment_stat_counter, processed_reads
+    tmp_printer.close()
+    processed_reads_manager.finalize(chr_id)
+    logger.info("Finished processing chromosome " + chr_id)
+    open(lock_file, "w").close()
 
+    return chr_id, read_grouper.read_groups, alignment_collector.alignment_stat_counter, processed_reads_manager
 
 def construct_models_in_parallel(sample, chr_id, saves_prefix, args, read_groups):
     logger.info("Processing chromosome " + chr_id)
@@ -246,7 +245,7 @@ def filter_umis_in_parallel(sample, chr_id, split_barcodes_dict, args, edit_dist
                                                                                transcript_type_dict,
                                                                                out_umi_filtered, filtered_reads)
     open(umi_filtered_done, "w").close()
-    logger.info("PCD duplicates filtered for chromosome " + chr_id)
+    logger.info("PCR duplicates filtered for chromosome " + chr_id)
 
     return all_info_file_name, stats_output_file_name
 
@@ -378,9 +377,10 @@ class DatasetProcessor:
                 for f in glob.glob(sample.read_group_file + "*"):
                     os.remove(f)
 
-    def process_all_samples(self):
-        logger.info("Processing " + proper_plural_form("experiment", len(self.input_data.samples)))
-        for sample in self.input_data.samples:
+    def process_all_samples(self, input_data):
+        logger.info("Processing " + proper_plural_form("experiment", len(input_data.samples)))
+        logger.info("Secondary alignments will%s be used" % ("" if self.args.use_secondary else " not"))
+        for sample in input_data.samples:
             self.process_sample(sample)
         self.clean_up()
         logger.info("Processed " + proper_plural_form("experiment", len(self.input_data.samples)))
@@ -516,11 +516,19 @@ class DatasetProcessor:
             clean_locks(chr_ids, sample.out_raw_file, reads_collected_lock_file_name)
             clean_locks(chr_ids, sample.out_raw_file, reads_processed_lock_file_name)
 
+        if not self.args.use_secondary:
+            processed_read_manager_type = ProcessedReadsManagerNoSecondary
+        elif self.args.high_memory:
+            processed_read_manager_type = ProcessedReadsManagerHighMemory
+        else:
+            processed_read_manager_type = ProcessedReadsManagerNormalMemory
+
         read_gen = (
             collect_reads_in_parallel,
             itertools.repeat(sample),
             chr_ids,
             itertools.repeat(self.args),
+            itertools.repeat(processed_read_manager_type)
         )
 
         all_read_groups = set()
@@ -530,24 +538,17 @@ class DatasetProcessor:
         else:
             results = map(*read_gen)
 
-        multimapped_reads = defaultdict(list)
-        multimappers_counts = defaultdict(int)
-        for read_groups, alignment_stats, processed_reads in results:
+        sample_procesed_read_manager = processed_read_manager_type(sample, self.args.multimap_strategy)
+        logger.info("Counting multimapped reads")
+        for chr_id, read_groups, alignment_stats, processed_reads in results:
+            logger.info("Counting reads from %s" % chr_id)
             all_read_groups.update(read_groups)
             self.alignment_stat_counter.merge(alignment_stats)
-            if self.args.high_memory:
-                for basic_read_assignment in processed_reads:
-                    multimapped_reads[basic_read_assignment.read_id].append(basic_read_assignment)
-            else:
-                for read_id in processed_reads: multimappers_counts[read_id] += 1
+            sample_procesed_read_manager.merge(processed_reads, chr_id)
 
-        unique_assignments, polya_unique_assignments = 0, 0
-        if not self.args.high_memory:
-            multimapped_reads, unique_assignments, polya_unique_assignments \
-                = self.prepare_multimapper_dict(chr_ids, sample, multimappers_counts)
-        total_assignments, polya_assignments = self.resolve_multimappers(chr_ids, sample, multimapped_reads)
-        total_assignments += unique_assignments
-        polya_assignments += polya_unique_assignments
+        logger.info("Resolving multimappers")
+        total_assignments, polya_assignments = sample_procesed_read_manager.resolve()
+        logger.info("Multimappers resolved")
 
         for bam_file in list(map(lambda x: x[0], sample.file_list)):
             bam = pysam.AlignmentFile(bam_file, "rb", require_index=True)
@@ -566,58 +567,6 @@ class DatasetProcessor:
         else:
             logger.info('Finishing read assignment, total assignments %d, polyA percentage %.1f' %
                         (total_assignments, 100 * polya_assignments / total_assignments))
-
-    def prepare_multimapper_dict(self, chr_ids, sample, multimappers_counts):
-        logger.info("Counting multimapped reads")
-        multimapped_reads = defaultdict(list)
-        unique_assignments = 0
-        polya_unique_assignments = 0
-
-        for chr_id in chr_ids:
-            chr_dump_file = saves_file_name(sample.out_raw_file, chr_id)
-            loader = BasicReadAssignmentLoader(chr_dump_file)
-            while loader.has_next():
-                for read_assignment in loader.get_next():
-                    if read_assignment is None:
-                        continue
-                    if (read_assignment.read_id in multimappers_counts and
-                            multimappers_counts[read_assignment.read_id] == 1):
-                        unique_assignments += 1
-                        polya_unique_assignments += 1 if read_assignment.polyA_found else 0
-                        continue
-                    multimapped_reads[read_assignment.read_id].append(read_assignment)
-        return multimapped_reads, unique_assignments, polya_unique_assignments
-
-    def resolve_multimappers(self, chr_ids, sample, multimapped_reads):
-        logger.info("Resolving multimappers")
-        multimap_resolver = MultimapResolver(self.args.multimap_strategy)
-        multimap_dumper = {}
-        for chr_id in chr_ids:
-            multimap_dumper[chr_id] = open(multimappers_file_name(sample.out_raw_file, chr_id), "wb")
-        total_assignments = 0
-        polya_assignments = 0
-
-        for assignment_list in multimapped_reads.values():
-            if len(assignment_list) > 1:
-                assignment_list = multimap_resolver.resolve(assignment_list)
-                resolved_lists = defaultdict(list)
-                for a in assignment_list:
-                    resolved_lists[a.chr_id].append(a)
-                for chr_id in resolved_lists.keys():
-                    write_list(resolved_lists[chr_id], multimap_dumper[chr_id], BasicReadAssignment.serialize)
-
-            for a in assignment_list:
-                if a.assignment_type != ReadAssignmentType.suspended:
-                    total_assignments += 1
-                    if a.polyA_found:
-                        polya_assignments += 1
-
-        for chr_id in chr_ids:
-            write_int(TERMINATION_INT, multimap_dumper[chr_id])
-            multimap_dumper[chr_id].close()
-
-        logger.info("Multimappers resolved")
-        return total_assignments, polya_assignments
 
     def process_assigned_reads(self, sample, dump_filename):
         chr_ids = self.get_chr_list()

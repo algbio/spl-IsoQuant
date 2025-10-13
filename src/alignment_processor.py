@@ -5,6 +5,7 @@
 ############################################################################
 
 import logging
+import math
 from collections import defaultdict
 from queue import PriorityQueue
 
@@ -223,12 +224,20 @@ class AlignmentCollector:
     counter
     """
 
-    MAX_REGION_LEN = 32768
+    MIN_REGION_LEN = 32768
+    MAX_REGION_LEN = 1048576
     MIN_READS_TO_SPLIT = 1024
     ABS_COV_VALLEY = 1
     REL_COV_VALLEY = 0.01
 
-    def __init__(self, chr_id, bam_pairs, params, illumina_bam, genedb=None, chr_record=None, read_groupper=DefaultReadGrouper()):
+    SMALL_CHR_IDS = ['MT', 'chrM', 'chrMT']
+    SMALL_CHR_LEN = 500000
+    WARN_COVERAGE = 2000000
+
+    def __init__(self, chr_id, bam_pairs, params, illumina_bam,
+                 genedb=None, chr_record=None, read_groupper=DefaultReadGrouper(),
+                 small_chr_max_coverage=1000000,
+                 usual_gene_max_coverage=-1):
         self.chr_id = chr_id
         self.bam_pairs = bam_pairs
         self.params = params
@@ -241,6 +250,8 @@ class AlignmentCollector:
                                           multiple_iterators=not self.params.high_memory)
         self.strand_detector = StrandDetector(self.chr_record)
         self.read_groupper = read_groupper
+        self.small_chr_max_coverage = small_chr_max_coverage
+        self.usual_gene_max_coverage = usual_gene_max_coverage
         self.polya_finder = PolyAFinder(self.params.polya_window, self.params.polya_fraction)
         self.polya_fixer = PolyAFixer(self.params)
         self.alignment_stat_counter = EnumStats()
@@ -271,32 +282,63 @@ class AlignmentCollector:
         split_regions = AlignmentCollector.split_coverage_regions(current_region, alignment_storage)
 
         if len(split_regions) == 1:
-            yield self.process_alignments_in_region(current_region, alignment_storage.get_alignments())
+            max_coverage = split_regions[0][1]
+            yield self.process_alignments_in_region(current_region, alignment_storage.get_alignments(), max_coverage)
         else:
-            for new_region in split_regions:
+            for new_region, max_coverage in split_regions:
                 alignments = alignment_storage.get_alignments(new_region)
-                yield self.process_alignments_in_region(new_region, alignments)
+                yield self.process_alignments_in_region(new_region, alignments, max_coverage)
 
-    def process_alignments_in_region(self, current_region, alignment_storage):
+    def process_alignments_in_region(self, current_region, alignment_storage, max_coverage):
         logger.debug("Processing region %s" % str(current_region))
+
+        skip_read_fraction = 1
+        chr_len = len(self.chr_record)
+        if self.chr_id in self.SMALL_CHR_IDS or len(self.chr_record) < self.SMALL_CHR_LEN:
+            coverage_cutoff = self.small_chr_max_coverage
+            chromosome_description = "small "
+            option_string = "max_coverage_small_chr"
+        else:
+            coverage_cutoff = self.usual_gene_max_coverage
+            chromosome_description = ""
+            option_string = "max_coverage_normal_chr"
+
+        if max_coverage > coverage_cutoff > 0:
+            skip_read_fraction = math.ceil(max_coverage / coverage_cutoff)
+            logger.warning("Genomic region %d-%d on %schromosome %s (region length %d, chromosome length %d) "
+                           "has coverage %d, which exceed coverage cutoff %d" %
+                           (current_region[0], current_region[1], chromosome_description, self.chr_id,
+                            current_region[1] - current_region[0], chr_len, max_coverage, coverage_cutoff))
+            logger.warning("Large number of reads mapped to a single loci may significantly "
+                           "increase running time and RAM consumption")
+            logger.warning("IsoQuant will process only 1 read out of every %d, "
+                           "use --%s to change the coverage limit for small chromosomes" % (skip_read_fraction, option_string))
+        elif max_coverage > self.WARN_COVERAGE:
+            logger.info("Genomic region %d-%d on %schromosome %s (region length %d) has high coverage %d" %
+                        (current_region[0], current_region[1], chromosome_description, self.chr_id,
+                         current_region[1] - current_region[0], max_coverage))
+            logger.info("Large number of reads mapped to a single loci may significantly "
+                        "increase running time and RAM consumption, maximum coverage threshold "
+                        "can be set via --%s" % option_string)
+
         gene_info = self.get_gene_info_for_region(current_region)
         if gene_info.empty():
-            assignment_storage = self.process_intergenic(alignment_storage, current_region)
+            assignment_storage = self.process_intergenic(alignment_storage, current_region, skip_read_fraction)
         else:
-            assignment_storage = self.process_genic(alignment_storage, gene_info, current_region)
+            assignment_storage = self.process_genic(alignment_storage, gene_info, current_region, skip_read_fraction)
 
         return gene_info, assignment_storage
 
-    def process_intergenic(self, alignment_storage, region):
-        assignment_storage = []
+    def process_intergenic(self, alignment_storage, region, skip_read_fraction=1):
         if self.illumina_bam is not None:
             corrector = IlluminaExonCorrector(self.chr_id, region[0], region[1], self.illumina_bam)
         else:
             corrector = VoidExonCorrector()
 
+        counter = 0
         for bam_index, alignment in alignment_storage:
             if alignment.reference_id == -1 or alignment.is_supplementary or \
-                    (self.params.no_secondary and alignment.is_secondary):
+                    (not self.params.use_secondary and alignment.is_secondary):
                 continue
 
             if self.params.min_mapq and alignment.mapping_quality < self.params.min_mapq:
@@ -309,11 +351,12 @@ class AlignmentCollector:
                 logger.warning("Read %s has no aligned exons" % read_id)
                 continue
 
-            #if len(alignment_info.read_exons) > 2 and not alignment.is_secondary and \
-            #        alignment.mapping_quality < self.params.multi_intron_mapping_quality_cutoff:
-            #    continue
             if len(alignment_info.read_exons) <= 2 and \
                     (alignment.is_secondary or alignment.mapping_quality < self.params.simple_alignments_mapq_cutoff):
+                continue
+
+            counter += 1
+            if skip_read_fraction > 1 and counter % skip_read_fraction != 0:
                 continue
 
             alignment_info.add_polya_info(self.polya_finder, self.polya_fixer)
@@ -340,21 +383,24 @@ class AlignmentCollector:
             read_assignment.multimapper = alignment.is_secondary
             read_assignment.mapping_quality = alignment.mapping_quality
             AlignmentCollector.import_bam_tags(alignment, read_assignment, self.params.bam_tags)
-            assignment_storage.append(read_assignment)
-        return assignment_storage
+            yield read_assignment
 
-    def process_genic(self, alignment_storage, gene_info, region):
+    def process_genic(self, alignment_storage, gene_info, region, skip_read_fraction=1):
         assigner = LongReadAssigner(gene_info, self.params)
         profile_constructor = CombinedProfileConstructor(gene_info, self.params)
         exon_corrector = ExonCorrector(gene_info, self.params, self.chr_record)
-        assignment_storage = []
 
+        counter = 0
         for bam_index, alignment in alignment_storage:
             if alignment.reference_id == -1 or alignment.is_supplementary or \
-                    (self.params.no_secondary and alignment.is_secondary):
+                    (not self.params.use_secondary and alignment.is_secondary):
                 continue
 
             if self.params.min_mapq and alignment.mapping_quality < self.params.min_mapq:
+                continue
+
+            counter += 1
+            if skip_read_fraction > 1 and counter % skip_read_fraction != 0:
                 continue
 
             read_id = alignment.query_name
@@ -403,9 +449,8 @@ class AlignmentCollector:
                 read_assignment.exon_gene_profile = alignment_info.combined_profile.read_exon_profile.gene_profile
                 read_assignment.intron_gene_profile = alignment_info.combined_profile.read_intron_profile.gene_profile
 
-            assignment_storage.append(read_assignment)
             logger.debug("=== Finished read " + read_id + " ===")
-        return assignment_storage
+            yield read_assignment
 
     def get_assignment_strand(self, read_assignment):
         if read_assignment.isoform_matches and read_assignment.assignment_type in \
@@ -470,25 +515,44 @@ class AlignmentCollector:
 
     @staticmethod
     def split_coverage_regions(genomic_region, alignment_storage):
-        if interval_len(genomic_region) < AlignmentCollector.MAX_REGION_LEN and \
+        if interval_len(genomic_region) < AlignmentCollector.MIN_REGION_LEN or \
                 alignment_storage.get_read_count() < AlignmentCollector.MIN_READS_TO_SPLIT:
-            return [genomic_region]
+            max_coverage = max(alignment_storage.coverage_dict.values())
+            return [(genomic_region, max_coverage)]
 
         split_regions = []
         coverage_dict = alignment_storage.coverage_dict
         coverage_positions = sorted(coverage_dict.keys())
         current_start = coverage_positions[0]
-        min_bins = int(AlignmentCollector.MAX_REGION_LEN / AbstractAlignmentStorage.COVERAGE_BIN)
+        min_bins = int(AlignmentCollector.MIN_REGION_LEN / AbstractAlignmentStorage.COVERAGE_BIN)
+        max_bins = int(AlignmentCollector.MAX_REGION_LEN / AbstractAlignmentStorage.COVERAGE_BIN)
         pos = current_start + 1
         max_cov = coverage_dict[current_start]
+        abs_cov_valley = AlignmentCollector.ABS_COV_VALLEY
+        rel_cov_valley = AlignmentCollector.REL_COV_VALLEY
+        prev_upd_pos = pos
+
         while pos <= coverage_positions[-1]:
-            while (pos <= coverage_positions[-1] and pos - current_start < min_bins) or \
-                    coverage_dict[pos] > max(AlignmentCollector.ABS_COV_VALLEY, max_cov * AlignmentCollector.REL_COV_VALLEY):
+            while (pos <= coverage_positions[-1] and
+                   (pos - current_start < min_bins or
+                    coverage_dict[pos] > max(abs_cov_valley,
+                                             max_cov * rel_cov_valley))):
+                if pos - prev_upd_pos > max_bins:
+                    # increase valley cut-offs every MAX_REGION_LEN bases to avoid extra long regions
+                    prev_upd_pos = pos
+                    abs_cov_valley += AlignmentCollector.ABS_COV_VALLEY
+                    rel_cov_valley += AlignmentCollector.REL_COV_VALLEY
+
                 max_cov = max(max_cov, coverage_dict[pos])
                 pos += 1
-            split_regions.append((max(current_start * AbstractAlignmentStorage.COVERAGE_BIN + 1, genomic_region[0]),
-                                  min(pos * AbstractAlignmentStorage.COVERAGE_BIN, genomic_region[1])))
+
+            split_regions.append(((max(current_start * AbstractAlignmentStorage.COVERAGE_BIN + 1, genomic_region[0]),
+                                   min(pos * AbstractAlignmentStorage.COVERAGE_BIN, genomic_region[1])),
+                                  max_cov))
             current_start = pos
+            prev_upd_pos = pos
+            abs_cov_valley = AlignmentCollector.ABS_COV_VALLEY
+            rel_cov_valley = AlignmentCollector.REL_COV_VALLEY
             max_cov = coverage_dict[current_start]
             pos = min(current_start + 1, coverage_positions[-1] + 1)
 

@@ -110,7 +110,7 @@ def parse_args(cmd_args=None, namespace=None):
                                 help="use this flag if gene annotation contains transcript and gene metafeatures, "
                                      "e.g. with official annotations, such as GENCODE; "
                                      "speeds up gene database conversion")
-    ref_args_group.add_argument("--discard_chr", nargs="+", help="chromosome IDs to ignore", type=str, default=[])
+    add_additional_option_to_group(ref_args_group, "--discard_chr", nargs="+", help="chromosome IDs to ignore", type=str, default=[])
     add_additional_option_to_group(ref_args_group, "--index", help="genome index for specified aligner (optional)",
                                    type=str)
 
@@ -122,12 +122,6 @@ def parse_args(cmd_args=None, namespace=None):
     input_args.add_argument('--fastq', nargs='+', type=str,
                             help='input FASTQ/FASTA file(s) with reads, each file will be treated as a separate sample; '
                                  'reference genome should be provided when using reads as input')
-    add_additional_option_to_group(input_args,'--bam_list', type=str,
-                                   help='text file with list of BAM files, one file per line, '
-                                        'leave empty line between samples')
-    add_additional_option_to_group(input_args,'--fastq_list', type=str,
-                                   help='text file with list of FASTQ files, one file per line, '
-                                        'leave empty line between samples')
     input_args.add_argument('--yaml', type=str, help='yaml file containing all input files, one entry per sample'
                                                      ', check readme for format info')
 
@@ -156,7 +150,6 @@ def parse_args(cmd_args=None, namespace=None):
                                help='file with barcode whitelist for barcode calling')
     sc_args_group.add_argument("--barcoded_reads", type=str, nargs='+',
                                help='file with barcoded reads; barcodes will be called automatically if not provided')
-
 
     # ALGORITHM
     add_additional_option_to_group(algo_args_group, "--report_novel_unspliced", "-u", type=bool_str,
@@ -257,21 +250,33 @@ def parse_args(cmd_args=None, namespace=None):
                           help="annotation in BED format produced by minimap's paftools.js gff2bed "
                                "(will be created automatically if not given)")
     add_additional_option_to_group(align_args_group, "--indexing_options", type=str,
-                                   help="additional options that will be passed to the aligindexerner indexer")
+                                   help="additional options that will be passed to the aligner indexer")
     add_additional_option_to_group(align_args_group, "--mapping_options", type=str,
                                    help="additional options that will be passed to the aligner")
 
     # READ FILTERING
-    add_additional_option_to_group(filer_args_group, "--no_secondary", help="ignore secondary alignments (not recommended)",
+    add_additional_option_to_group(filer_args_group, "--use_secondary",
+                                   help="use secondary alignments (slower processing)",
                                    action='store_true', default=False)
-    add_additional_option_to_group(filer_args_group, "--min_mapq", help="ignore alignments with MAPQ < this"
-                                                                        "(also filters out secondary alignments, default: None)", type=int)
-    add_additional_option_to_group(filer_args_group, "--inconsistent_mapq_cutoff", help="ignore inconsistent alignments with MAPQ < this "
-                                                                                        "(works only with the reference annotation, default=5)",
+    add_additional_option_to_group(filer_args_group, "--no_secondary",
+                                   help="deprecated, secondary alignments are not used by default (kept for user convenience)",
+                                   action='store_true', default=False)
+    add_additional_option_to_group(filer_args_group, "--min_mapq",
+                                   help="ignore alignments with MAPQ < this (also filters out secondary alignments, default: None)", type=int)
+    add_additional_option_to_group(filer_args_group, "--inconsistent_mapq_cutoff",
+                                   help="ignore inconsistent alignments with MAPQ < this (works only with the reference annotation, default=5)",
                                    type=int, default=5)
-    add_additional_option_to_group(filer_args_group, "--simple_alignments_mapq_cutoff", help="ignore alignments with 1 or 2 exons and "
-                                                                                             "MAPQ < this (works only in annotation-free mode, "
-                                                                                             "default=1)", type=int, default=1)
+    add_additional_option_to_group(filer_args_group, "--simple_alignments_mapq_cutoff",
+                                   help="ignore alignments with 1 or 2 exons and MAPQ < this "
+                                        "(works only in annotation-free mode, default=1)", type=int, default=1)
+    add_additional_option_to_group(filer_args_group, "--max_coverage_small_chr",
+                                   help="process only a fraction of reads for high-coverage loci on small chromosomes, "
+                                        "e.g. mitochondrial (default 1000000); significantly improves running time and RAM",
+                                   type=int, default=1000000)
+    add_additional_option_to_group(filer_args_group, "--max_coverage_normal_chr",
+                                   help="process only a fraction of reads for high-coverage loci on usual chromosomes"
+                                        " (default -1 = infinity);  improves running time and RAM",
+                                   type=int, default=-1)
 
     # REST
     add_hidden_option("--graph_clustering_distance", type=int, default=None,
@@ -420,17 +425,9 @@ def check_input_params(args):
         return False
     args.data_type = DATA_TYPE_ALIASES[args.data_type]
 
-    if not args.fastq and not args.fastq_list and not args.bam and not args.bam_list and not args.yaml:
-        logger.error("No input data was provided")
-        return False
 
     if args.yaml and args.illumina_bam:
         logger.error("When providing a yaml file it should include all input files, including the illumina bam file.")
-        return False
-
-    if args.illumina_bam and (args.fastq_list or args.bam_list):
-        logger.error("Unsupported combination of list of input files and Illumina bam file."
-                     "To combine multiple experiments with short read correction please use yaml input.")
         return False
 
     args.input_data = InputDataStorage(args)
@@ -459,6 +456,11 @@ def check_input_params(args):
         args.sqanti_output = False
         logger.warning("--sqanti_output option has no effect without model construction")
 
+    if args.no_secondary:
+        logger.info("--no_secondary option has no effect and will be deprecated, secondary alignments are not used by default")
+
+
+    args.mode = IsoQuantMode[args.mode]
     if not isinstance(args.mode, IsoQuantMode):
         args.mode = IsoQuantMode[args.mode]
     if args.mode.needs_barcode_calling():
@@ -897,14 +899,13 @@ def run_pipeline(args):
 
     # run isoform assignment
     dataset_processor = DatasetProcessor(args)
-    dataset_processor.process_all_samples()
+    dataset_processor.process_all_samples(args.input_data)
 
     # aggregate counts for all samples
     if len(args.input_data.samples) > 1 and args.genedb:
         combine_counts(args.input_data, args.output)
 
     logger.info(" === Spl-IsoQuant pipeline finished === ")
-
 
 # Test mode is triggered by --test option
 class TestMode(argparse.Action):
