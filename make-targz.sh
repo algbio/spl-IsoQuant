@@ -24,6 +24,8 @@ cp -r ./src $TARGET_DIR/
 cp -r ./tests $TARGET_DIR/
 cp -r ./docs $TARGET_DIR/
 
+rm -fr $TARGET_DIR/tests/short_reads_toy/
+rm -fr $TARGET_DIR/tests/simple_data/
 
 cp splisoquant.py $TARGET_DIR/
 cp splisoquant_detect_barcodes.py $TARGET_DIR/
