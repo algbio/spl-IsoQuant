@@ -99,11 +99,12 @@ You can leave your comments and bug reports at our [GitHub repository tracker](h
 
     For example, using the toy data provided within this repository,
 
-        ./splisoquant.py --reference tests/toy_data/MAPT.Mouse.reference.fasta \
-        --genedb tests/toy_data/MAPT.Mouse.genedb.gtf \
-        --fastq tests/toy_data/MAPT.Mouse.ONT.simulated.fastq \
-        --data_type nanopore -o toy_data_out
-
+        ./splisoquant.py --data_type nanopore --mode stereoseq_nosplit  \
+        --fastq /home/andreyp/ablab/spl-IsoQuant/tests/stereo/S1.4K.subsample.fq.gz \
+        --barcode_whitelist /home/andreyp/ablab/spl-IsoQuant/tests/stereo/barcodes.tsv \
+        --reference /home/andreyp/ablab/spl-IsoQuant/tests/stereo/GRCm39.chrX.7.fa.gz \
+        --genedb /home/andreyp/ablab/spl-IsoQuant/tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf \
+        --complete_genedb --output splisoquant_test  -p TEST_DATA
 
 * To run Spl-IsoQuant on aligned reads (make sure your BAM is sorted and indexed) use the following command:
 
