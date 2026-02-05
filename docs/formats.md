@@ -84,7 +84,7 @@ Grouped counts are stored in linear format by default - a TSV file with 3 column
 * `group_id` - group name;
 * `count` - read count of the feature in this group. 
 
-By default, IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
+By default, Spl-IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
 larger matrices (e.g. for single-cell experiments) will be saved to MTX format, which is compatible with the Seurat package.
 In standard matrix rows represent features, columns represent groups. While being more human-readable, 
 this file make take substantial disk space when the number of groups is large.

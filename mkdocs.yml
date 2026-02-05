@@ -1,16 +1,16 @@
-site_name: IsoQuant
+site_name: Spl-IsoQuant
 
 nav:
   - Home: index.md
   - Quick start: getting-started.md
   - Installation: installation.md
   - Supported data: data.md
-  - Running IsoQuant:
+  - Running Spl-IsoQuant:
     - Ways of providing input data: input.md
     - Command line options: cmd.md
     - Examples: examples.md
     - Single-cell analysis: single_cell.md
-  - IsoQuant output:
+  - Spl-IsoQuant output:
      - Output files: output.md
      - File formats: formats.md
      - Assignment classification: classification.md

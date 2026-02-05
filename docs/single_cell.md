@@ -1,9 +1,7 @@
 # Single-cell and spatial transcriptomics
 
-**NB! This feature is experimental and is not part of the official IsoQuant release.**
-
-IsoQuant supports single-cell and spatial transcriptomics data from multiple platforms.
-When a single-cell or spatial mode is selected, IsoQuant automatically performs
+Spl-IsoQuant is specifically designed for single-cell and spatial long-read transcriptomics data from multiple platforms.
+When a single-cell or spatial mode is selected, Spl-IsoQuant automatically performs
 barcode calling and UMI-based PCR deduplication as part of the pipeline.
 
 ## Overview
@@ -11,7 +9,7 @@ barcode calling and UMI-based PCR deduplication as part of the pipeline.
 The single-cell/spatial pipeline extends the standard bulk pipeline with these additional steps:
 
 1. **Barcode calling** -- extract cell/spot barcodes and UMIs from raw reads
-2. **Standard IsoQuant processing** -- alignment, read-to-isoform assignment
+2. **Standard Spl-IsoQuant processing** -- alignment, read-to-isoform assignment
 3. **UMI deduplication** -- remove PCR/RT duplicates within each barcode group
 4. **Grouped quantification** -- produce per-cell/per-spot count matrices
 
@@ -72,7 +70,7 @@ splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 `--mode` or `-m`
 
-IsoQuant processing mode. Available modes:
+Spl-IsoQuant processing mode. Available modes:
 
 * `bulk` -- standard bulk RNA-seq mode (default)
 * `tenX_v3` -- 10x Genomics single-cell 3' gene expression
@@ -106,10 +104,10 @@ The number of whitelist files depends on the mode:
 `--barcoded_reads`
 Path to TSV file(s) with pre-called barcoded reads.
 Format: `read_id<TAB>barcode<TAB>umi` (one read per line).
-If provided, IsoQuant skips barcode calling and uses these assignments directly.
+If provided, Spl-IsoQuant skips barcode calling and uses these assignments directly.
 More than 3 columns are allowed, but only the first 3 will be used.
 
-Note! IsoQuant does not read barcodes or UMIs from BAM file tags.
+Note! Spl-IsoQuant does not read barcodes or UMIs from BAM file tags.
 
 `--barcode2spot`
 Path to TSV file mapping barcodes to cell types, spatial spots, or other barcode properties.
@@ -123,13 +121,13 @@ to group counts by cell type, spatial regions, or other provided properties.
 `--molecule`
 Path to a molecule description format (MDF) file for `custom_sc` mode.
 This file defines the structure of the sequencing molecule (barcodes, UMIs, linkers, polyT, cDNA)
-and allows IsoQuant to process reads from any single-cell or spatial platform.
+and allows Spl-IsoQuant to process reads from any single-cell or spatial platform.
 See the [MDF format](#molecule-definition-file-mdf-format) section below for details.
 
 ## Molecule description format (MDF)
 
 The MDF format allows users to describe the structure of their sequencing molecule
-so that IsoQuant can extract barcodes and UMIs from any platform.
+so that Spl-IsoQuant can extract barcodes and UMIs from any platform.
 The molecule is described in the 3' to 5' direction (primer end first, cDNA last).
 
 An MDF file has two parts:
@@ -231,7 +229,7 @@ The representative read is selected based on:
 
 ### Count matrices
 
-Single-cell/spatial modes produce grouped count matrices in addition to the standard IsoQuant output.
+Single-cell/spatial modes produce grouped count matrices in addition to the standard Spl-IsoQuant output.
 Use `--counts_format` to control the output format:
 
 * `default` -- automatic selection: matrix format for small numbers of groups (<=100), MTX for larger datasets

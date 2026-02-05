@@ -1,6 +1,6 @@
 # Installation
 
-IsoQuant requires a 64-bit Linux system or Mac OS and Python (3.8 and higher) to be pre-installed on it.
+Spl-IsoQuant requires a 64-bit Linux system or Mac OS and Python (3.8 and higher) to be pre-installed on it.
 You will also need
 
 -   [gffutils](https://pythonhosted.org/gffutils/installation.html)
@@ -12,18 +12,12 @@ You will also need
 -   [samtools](http://www.htslib.org/download/)
 -   [STAR](https://github.com/alexdobin/STAR) (optional)
 
-## Installing from conda
-IsoQuant can be installed with conda:
-```bash
-conda create -c conda-forge -c bioconda -n isoquant python=3.8 isoquant
-```
-
 ## Installing from GitHub
-To obtain IsoQuant you can download repository and install requirements.  
-Clone IsoQuant repository and switch to the latest release:
+To obtain Spl-IsoQuant you can download repository and install requirements.
+Clone Spl-IsoQuant repository and switch to the latest release:
 ```bash
-git clone https://github.com/ablab/IsoQuant.git
-cd IsoQuant
+git clone https://github.com/algbio/spl-IsoQuant.git
+cd spl-IsoQuant
 git checkout latest
 ```
 Install requirements:
@@ -34,13 +28,13 @@ pip install -r requirements.txt
 You also need [samtools](http://www.htslib.org/download/) and [minimap2](https://github.com/lh3/minimap2) to be in the `$PATH` variable.
 
 ## Verifying your installation
-To verify IsoQuant installation type
+To verify Spl-IsoQuant installation type
 ```bash
 splisoquant.py --test
 ```
-to run on toy dataset.  
+to run on toy dataset.
 If the installation is successful, you will find the following information at the end of the log:
 ```bash
-=== IsoQuant pipeline finished ===
+=== Spl-IsoQuant pipeline finished ===
 === TEST PASSED CORRECTLY ===
 ```

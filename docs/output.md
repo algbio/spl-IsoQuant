@@ -1,9 +1,9 @@
-# IsoQuant output files
+# Spl-IsoQuant output files
 
-IsoQuant output files will be stored in `<output_dir>`, which is set by the user.
+Spl-IsoQuant output files will be stored in `<output_dir>`, which is set by the user.
 If the output directory was not specified the files are stored in `isoquant_output`.
 
-IsoQuant consists of two stages, which generate its own output:
+Spl-IsoQuant consists of two stages, which generate its own output:
 1. Reference-based analysis. Runs only if reference annotation is provided. Performs read-to-isofrom assignment,
 splice site correction and abundance quantification for reference genes/transcripts.
 2. Transcript discovery. Reconstructs transcript models and performs abundance quantification for discovered isoforms.
@@ -20,7 +20,7 @@ _Will be produced only if a reference gene annotation is provided._
 * `SAMPLE_ID.gene_tpm.tsv` - TSV file with reference gene expression in TPM;
 
 
-If `--sqanti_output` is set, IsoQuant will produce output in [SQANTI](https://github.com/ConesaLab/SQANTI3)-like format:
+If `--sqanti_output` is set, Spl-IsoQuant will produce output in [SQANTI](https://github.com/ConesaLab/SQANTI3)-like format:
 
 * `SAMPLE_ID.novel_vs_known.SQANTI-like.tsv` - discovered novel transcripts vs reference transcripts (similar, but not identical to SQANTI `classification.txt`);
 
@@ -40,7 +40,7 @@ If `--read_group` is set or multiple files are provided, the per-group expressio
 Note, that grouped counts can be converted to any format using `src/convert_grouped_counts.py`.
 
 #### Other formats
-By default, IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
+By default, Spl-IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
 larger matrices (e.g. for single-cell experiments) will be saved to MTX.
 See [options](cmd.md#specific-output-options) for details.
 

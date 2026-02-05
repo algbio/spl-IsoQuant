@@ -76,7 +76,7 @@ dataset.yaml file :
 ```
 
 
-IsoQuant will produce 2 sets of resulting files (including annotations and expression tables), one for each experiment.
+Spl-IsoQuant will produce 2 sets of resulting files (including annotations and expression tables), one for each experiment.
 Output sub-folder will be named `Experiment1` and `Experiment2`.
 Expression tables will have columns "Replicate1", "Replicate2" and "Replicate3".
 
@@ -115,6 +115,6 @@ splisoquant.py -d nanopore --yaml dataset.yaml  \
 ```
 
 
-IsoQuant will produce one output sub-folder `Experiment1`.
+Spl-IsoQuant will produce one output sub-folder `Experiment1`.
 Expression tables will have columns "Replicate1" and "Replicate2".
 Files having identical labels will be treated as a single replica (and thus the counts will be combined).

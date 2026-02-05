@@ -87,6 +87,9 @@ def parse_args(cmd_args=None, namespace=None):
             kwargs['help'] = argparse.SUPPRESS
         opt_group.add_argument(*args, **kwargs)
 
+    def add_option_to_group(opt_group, *args, **kwargs):  # show command only with --full-help
+        opt_group.add_argument(*args, **kwargs)
+
     def add_hidden_option(*args, **kwargs):  # show command only with --full-help
         kwargs['help'] = argparse.SUPPRESS
         parser.add_argument(*args, **kwargs)
@@ -163,20 +166,20 @@ def parse_args(cmd_args=None, namespace=None):
                         help="reads represent FL transcripts; both ends of the read are considered to be reliable")
 
     # SC ARGUMENTS
-    add_additional_option_to_group(sc_args_group, "--mode", "-m", type=str, choices=ISOQUANT_MODES,
-                                   help="IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
-                                        "; default:%s" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
-    add_additional_option_to_group(sc_args_group, '--barcode_whitelist', type=str, nargs='+',
-                                   help='file(s) with barcode whitelist(s) for barcode calling')
-    add_additional_option_to_group(sc_args_group, "--barcoded_reads", type=str, nargs='+',
-                                   help='TSV file(s) with barcoded reads; barcodes will be called automatically if not provided')
-    add_additional_option_to_group(sc_args_group, "--barcode2spot", type=str,
-                                   help='TSV file mapping barcode to cell type / spot id. '
-                                        'Format: file.tsv or file.tsv:barcode_col:spot_cols '
-                                        '(e.g., file.tsv:0:1,2,3 for multiple spot columns)')
-    add_additional_option_to_group(sc_args_group, "--molecule", type=str,
-                                   help='molecule definition file (MDF) for custom_sc mode; '
-                                        'defines molecule structure for universal barcode extraction')
+    add_option_to_group(sc_args_group, "--mode", "-m", type=str, choices=ISOQUANT_MODES,
+                        help="IsoQuant modes: " + ", ".join(ISOQUANT_MODES) +
+                             "; default:%s" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
+    add_option_to_group(sc_args_group, '--barcode_whitelist', type=str, nargs='+',
+                        help='file(s) with barcode whitelist(s) for barcode calling')
+    add_option_to_group(sc_args_group, "--barcoded_reads", type=str, nargs='+',
+                        help='TSV file(s) with barcoded reads; barcodes will be called automatically if not provided')
+    add_option_to_group(sc_args_group, "--barcode2spot", type=str,
+                        help='TSV file mapping barcode to cell type / spot id. '
+                             'Format: file.tsv or file.tsv:barcode_col:spot_cols '
+                             '(e.g., file.tsv:0:1,2,3 for multiple spot columns)')
+    add_option_to_group(sc_args_group, "--molecule", type=str,
+                        help='molecule definition file (MDF) for custom_sc mode; '
+                             'defines molecule structure for universal barcode extraction')
 
     # ALGORITHM
     add_additional_option_to_group(algo_args_group, "--report_novel_unspliced", "-u", type=bool_str,

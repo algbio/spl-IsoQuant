@@ -1,4 +1,4 @@
-# IsoQuant command line options
+# Spl-IsoQuant command line options
 
 
 ## Basic options
@@ -15,7 +15,7 @@ reference annotation database.
     Prints all available options (including hidden ones).
 
 `--test`
-    Runs IsoQuant on the toy data set.   
+    Runs Spl-IsoQuant on the toy data set.   
 
 
 ## Input options
@@ -102,7 +102,7 @@ Input file names are used as labels if not set.
 
  * `file_name` - groups reads by their original file names (or file name labels) within an experiment.
 This option makes sense when multiple files are provided.
-If multiple BAM/FASTQ files are provided and `--read_group` option is not set, IsoQuant will set `--read_group file_name`
+If multiple BAM/FASTQ files are provided and `--read_group` option is not set, Spl-IsoQuant will set `--read_group file_name`
 by default.
 
  * `tag:TAG` - groups reads by BAM file read tag, where `TAG` is the tag name
@@ -150,7 +150,7 @@ original file name, and barcode property (e.g. cell type).
 `--resume`
     Resume a previously unfinished run. Output folder with previous run must be specified.
     Allowed options are `--threads` and `--debug`, other options cannot be changed.
-    IsoQuant will run from the beginning if the output folder does not contain the previous run.
+    Spl-IsoQuant will run from the beginning if the output folder does not contain the previous run.
 
 `--force`
     force to overwrite the folder with previous run.
@@ -165,18 +165,16 @@ original file name, and barcode property (e.g. cell type).
     Do not report transcript models, run read assignment and quantification of reference features only.
 
 `--run_aligner_only`
-    Align reads to the reference without running IsoQuant itself.
+    Align reads to the reference without running Spl-IsoQuant itself.
 
 
 ## Single-cell and spatial transcriptomics options
-
-**NB! This feature is experimental and is not part of the official IsoQuant release.**
 
 See [single-cell and spatial transcriptomics](single_cell.md) for a detailed guide on
 supported platforms, examples, molecule description format, and UMI deduplication.
 
 `--mode` or `-m`
-IsoQuant mode for processing single-cell or spatial transcriptomics data. Available modes:
+Spl-IsoQuant mode for processing single-cell or spatial transcriptomics data. Available modes:
 
 * `bulk` - standard bulk RNA-seq mode (default)
 * `tenX_v3` - 10x Genomics single-cell 3' gene expression
@@ -203,10 +201,10 @@ If you have a subset of barcodes from short-read data, provide them instead of t
 `--barcoded_reads`
 Path to TSV file(s) with pre-called barcoded reads.
 Format: `read_id<TAB>barcode<TAB>umi` (one read per line).
-If provided, IsoQuant skips barcode calling and uses these assignments directly.
+If provided, Spl-IsoQuant skips barcode calling and uses these assignments directly.
 More than 3 columns are allowed, but only the first 3 will be used.
 
-Note! IsoQuant does not read barcodes or UMIs from BAM file tags.
+Note! Spl-IsoQuant does not read barcodes or UMIs from BAM file tags.
 
 `--barcode2spot`
 Path to TSV file mapping barcodes to cell types, spatial spots, or other barcode properties.
@@ -401,7 +399,7 @@ Experiments with simulated data show that this method could give more accurate e
 However, normalization method does not affect correlation/relative proportions.
 
 `--counts_format`
-    By default, IsoQuant outputs counts in internal linear format (see [formats](formats.md#expression-table-format) and [output](output.md#default-feature-counts-in-linear-format)).
+    By default, Spl-IsoQuant outputs counts in internal linear format (see [formats](formats.md#expression-table-format) and [output](output.md#default-feature-counts-in-linear-format)).
     Use this option to convert grouped counts to other format(s). You can provide a list with the following values:
 
 * `matrix` - standard matrix format with genes as rows and groups as columns;

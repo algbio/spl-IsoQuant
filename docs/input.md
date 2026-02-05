@@ -1,6 +1,6 @@
-# IsoQuant input
+# Spl-IsoQuant input
 
-To run IsoQuant, you should provide:
+To run Spl-IsoQuant, you should provide:
 
 * Long RNA reads (PacBio or Oxford Nanopore) in one of the following formats:
   * FASTA/FASTQ (can be gzipped);
@@ -9,11 +9,11 @@ To run IsoQuant, you should provide:
 * Reference sequence in FASTA format (can be gzipped);
 * _Optionally_, you may provide a reference gene annotation in gffutils database or GTF/GFF format (can be gzipped).
 
-IsoQuant is also capable of using short Illumina reads to correct long-read alignments.
+Spl-IsoQuant is also capable of using short Illumina reads to correct long-read alignments.
 
-IsoQuant can handle data from multiple _experiments_ simultaneously. Each experiment may contain multiple _samples_ (or _replicas_).
-Each experiment is processed individually. Running IsoQuant on several experiments simultaneously
-is equivalent to several separate IsoQuant runs.
+Spl-IsoQuant can handle data from multiple _experiments_ simultaneously. Each experiment may contain multiple _samples_ (or _replicas_).
+Each experiment is processed individually. Running Spl-IsoQuant on several experiments simultaneously
+is equivalent to several separate Spl-IsoQuant runs.
 
 The output files for each experiment will be placed into a separate folder.
 Files from the same _experiment_ are used to construct a single GTF and aggregated abundance tables.
@@ -27,7 +27,7 @@ The ways of providing input files are described below.
 The main options are `--fastq`, `--unmapped_bam` and `--bam` (see description below). 
 These options accept one or multiple files separated by space.
 All provided files are treated as a single experiment, which means a single combined GTF will
-be generated. If multiple files are provided, IsoQuant will compute tables with each column
+be generated. If multiple files are provided, Spl-IsoQuant will compute tables with each column
 corresponding to an individual file (per-sample counts).
 To set a specific label for each sample use the `--label` option. Number of labels must be equal to the number of files.
 To a set a prefix for the output files use the `--prefix` option.
