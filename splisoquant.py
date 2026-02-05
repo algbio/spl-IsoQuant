@@ -1085,15 +1085,16 @@ def run_pipeline(args):
 # Test mode is triggered by --test option
 class TestMode(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        self.out_dir = 'isoquant_test'
+        self.out_dir = 'splisoquant_test'
         if os.path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
         source_dir = os.path.dirname(os.path.realpath(__file__))
-        options = ['--output', self.out_dir, '--threads', '2',
-                   '--fastq', os.path.join(source_dir, 'tests/simple_data/chr9.4M.ont.sim.fq.gz'),
-                   '--reference', os.path.join(source_dir, 'tests/simple_data/chr9.4M.fa.gz'),
-                   '--genedb', os.path.join(source_dir, 'tests/simple_data/chr9.4M.gtf.gz'),
-                   '--clean_start', '--data_type', 'nanopore', '--complete_genedb', '--force', '-p', 'TEST_DATA']
+        options = ['--output', self.out_dir, '--threads', '2', '--mode', 'stereoseq',
+                   '--fastq', os.path.join(source_dir, 'tests/stereo/S1.4K.subsample.fq.gz'),
+                   '--barcode_whitelist', os.path.join(source_dir, 'tests/stereo/barcodes.tsv'),
+                   '--reference', os.path.join(source_dir, 'tests/stereo/GRCm39.chrX.7.fa.gz'),
+                   '--genedb', os.path.join(source_dir, 'tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf'),
+                   '--clean_start', '--data_type', 'nanopore', '--mode', 'stereoseq_nosplit', '--complete_genedb', '--force', '-p', 'TEST_DATA']
         print('=== Running in test mode === ')
         print("Running IsoQuant in test mode with the following options:")
         print(' '.join(options))
@@ -1106,12 +1107,11 @@ class TestMode(argparse.Action):
             sys.exit(IsoQuantExitCode.TEST_FAILED)
         parser.exit()
 
-
     def _check_log(self):
         with open(os.path.join(self.out_dir, 'isoquant.log'), 'r') as f:
             log = f.read()
 
-        correct_results = ['total assignments 4', 'polyA tail detected in 2', 'unique: 1', 'known: 2', 'Processed 1 experiment']
+        correct_results = ['unique: 6', 'Unique gene-barcodes pairs: 2', 'Barcode detected: 2']
         return all([result in log for result in correct_results])
 
 
