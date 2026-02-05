@@ -60,10 +60,12 @@ Pre-constructed `minimap2` index can also be provided to reduce mapping time.
 
 
 ## Citation
-The paper describing IsoQuant algorithms and benchmarking is available at [10.1038/s41587-022-01565-y](https://doi.org/10.1038/s41587-022-01565-y).
 
-To try Spl-IsoQuant you can use the data that was used in the publication [zenodo.org/record/7611877](https://zenodo.org/record/7611877).
+- [Spatial isoform sequencing at sub-micrometer single-cell resolution reveals novel patterns of spatial isoform variability in brain cell types
+L Michielsen, AD Prjibelski, C Foord et al., bioRxiv, 2025.06. 25.661563. ](https://www.biorxiv.org/content/10.1101/2025.06.25.661563.abstract)
 
+- [A spatial long-read approach at near-single-cell resolution reveals developmental regulation of splicing and polyadenylation sites in distinct cortical layers and cell types
+C Foord, AD Prjibelski, W Hu et al., Nature Communications 16 (1), 8093](https://www.nature.com/articles/s41467-025-63301-9)
 
 ## Feedback and bug reports
 Your comments, bug reports, and suggestions are very welcome. They will help us to further improve Spl-IsoQuant. If you have any troubles running Spl-IsoQuant, please send us `isoquant.log` from the `<output_dir>` directory.
