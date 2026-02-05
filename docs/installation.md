@@ -36,7 +36,7 @@ You also need [samtools](http://www.htslib.org/download/) and [minimap2](https:/
 ## Verifying your installation
 To verify IsoQuant installation type
 ```bash
-isoquant.py --test
+splisoquant.py --test
 ```
 to run on toy dataset.  
 If the installation is successful, you will find the following information at the end of the log:

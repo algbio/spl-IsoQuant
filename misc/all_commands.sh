@@ -29,7 +29,7 @@ TALON_PATH=""
 # minimap2 must be in $PATH
 if [ -z "$INPUT_BAM" ]
 then
-  $ISOQUANT_PATH/isoquant.py --reference $REF_GENOME --complete_genedb --genedb $REF_ANNOTATION --fastq $INPUT_READS \
+  $ISOQUANT_PATH/splisoquant.py --reference $REF_GENOME --complete_genedb --genedb $REF_ANNOTATION --fastq $INPUT_READS \
   -l $DATASET_NAME -d $ISOQUANT_DATA_TYPE --run_aligner_only -t $THREADS -o "mapped_reads_"$DATASET_NAME
   INPUT_BAM=`realpath "mapped_reads_"$DATASET_NAME/$DATASET_NAME/aux/*.bam`
 fi

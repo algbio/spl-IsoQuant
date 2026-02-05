@@ -9,7 +9,7 @@
 
 # IsoQuant
 
-[Full IsoQuant documentation can found here](https://ablab.github.io/IsoQuant/).
+[Full Spl-IsoQuant documentation can found here](https://ablab.github.io/IsoQuant/).
 Information in this README is given only for convenience and is not a full user manual.
 
 Current version: see `VERSION` file.

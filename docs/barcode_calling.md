@@ -38,7 +38,7 @@ use `--barcoded_reads` to skip the barcode calling step.
 `isoquant_detect_barcodes.py` can be run independently:
 
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   --input reads.fastq.gz \
   --barcodes barcode_whitelist.txt \
   --mode tenX_v3 \
@@ -94,7 +94,7 @@ Folder for temporary files during parallel processing.
 
 10x Genomics:
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   -i reads.fastq.gz \
   -b 3M-february-2018.txt.gz \
   --mode tenX_v3 \
@@ -104,7 +104,7 @@ python isoquant_detect_barcodes.py \
 
 Stereo-seq:
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   -i reads.fastq.gz \
   -b stereo_barcodes.txt \
   --mode stereoseq \
@@ -114,7 +114,7 @@ python isoquant_detect_barcodes.py \
 
 Custom molecule:
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   -i reads.fastq.gz \
   --mode custom_sc \
   --molecule my_platform.mdf \

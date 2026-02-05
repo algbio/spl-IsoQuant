@@ -38,7 +38,7 @@ which can also be used as a standalone tool.
 
 10x Genomics single-cell:
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --fastq reads.fastq.gz --data_type nanopore \
   --mode tenX_v3 --barcode_whitelist 3M-february-2018.txt.gz \
   -o sc_output
@@ -46,7 +46,7 @@ isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 Stereo-seq spatial:
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --fastq reads.fastq.gz --data_type nanopore \
   --mode stereoseq --barcode_whitelist barcodes.txt \
   -o stereo_output
@@ -54,7 +54,7 @@ isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 Custom platform with molecule definition file:
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --fastq reads.fastq.gz --data_type nanopore \
   --mode custom_sc --molecule molecule_definition.mdf \
   -o custom_output
@@ -62,7 +62,7 @@ isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 Pre-called barcodes (skip barcode calling):
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --bam aligned.bam --data_type nanopore \
   --mode tenX_v3 --barcoded_reads barcodes.tsv \
   -o sc_output
