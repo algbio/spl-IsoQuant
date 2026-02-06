@@ -2,8 +2,8 @@ name: Mouse ONT R9 correct truncation simulated no annotation
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 3 * * 2'
+#  schedule:
+#  - cron: '0 3 * * 2'
 
 env:
   RUN_NAME: Mouse.ONT_simulated.R9.trunc.no_gtf

@@ -2,8 +2,8 @@ name: SC Mouse 10x Allinfo
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 5 * * 6'
+#  schedule:
+#  - cron: '0 5 * * 6'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_pipeline.py

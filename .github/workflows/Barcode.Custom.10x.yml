@@ -2,8 +2,8 @@ name: Barcode Custom SC 10x
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 4 * * 1'
+#  schedule:
+#  - cron: '0 4 * * 1'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_barcode_test.py

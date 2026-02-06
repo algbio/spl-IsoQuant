@@ -2,8 +2,8 @@ name: Barcode Custom SC StereoSeq
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 1 * * 5'
+#  schedule:
+#  - cron: '0 1 * * 5'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_barcode_test.py

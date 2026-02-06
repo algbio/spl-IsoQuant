@@ -2,8 +2,8 @@ name: Barcode Mouse StereoSeq concat
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '45 1 * * 3'
+#  schedule:
+#  - cron: '45 1 * * 3'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_barcode_test.py

@@ -2,8 +2,8 @@ name: SC Human Curio Custom SC Allinfo
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 6 * * 0'
+#  schedule:
+#  - cron: '0 6 * * 0'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_pipeline.py

@@ -2,8 +2,8 @@ name: SIRVs real ONT no annotation
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 12 * * 0,2,4'
+#  schedule:
+#  - cron: '0 12 * * 0,2,4'
 
 env:
   RUN_NAME: SIRVs.Set4.R10

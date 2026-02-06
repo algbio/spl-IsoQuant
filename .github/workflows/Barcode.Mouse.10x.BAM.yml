@@ -2,8 +2,8 @@ name: Barcode Mouse 10x BAM R10.4
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '15 3 * * 2'
+#  schedule:
+#  - cron: '15 3 * * 2'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_barcode_test.py

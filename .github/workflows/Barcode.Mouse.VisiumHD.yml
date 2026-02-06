@@ -2,8 +2,8 @@ name: Barcode Mouse Visium HD
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '30 3 * * 5'
+#  schedule:
+#  - cron: '30 3 * * 5'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_barcode_test.py

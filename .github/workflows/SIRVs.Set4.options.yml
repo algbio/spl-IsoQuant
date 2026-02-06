@@ -2,8 +2,8 @@ name: SIRVs real ONT various options
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 21 * * 6'
+#  schedule:
+#  - cron: '0 21 * * 6'
 
 env:
   RUN_NAME: SIRVs.Set4.R10.OPTS

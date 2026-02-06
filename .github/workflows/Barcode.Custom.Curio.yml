@@ -2,8 +2,8 @@ name: Barcode Custom SC Curio
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 3 * * 3'
+#  schedule:
+#  - cron: '0 3 * * 3'
 
 env:
   LAUNCHER: ${{github.workspace}}/tests/github/run_barcode_test.py

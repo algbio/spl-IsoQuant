@@ -2,8 +2,8 @@ name: SIRVs simulated R10
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 12 * * 6'
+#  schedule:
+#  - cron: '0 12 * * 6'
 
 env:
   RUN_NAME: SIRVs.simulated

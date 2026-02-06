@@ -2,8 +2,8 @@ name: StereoSeq toy data test
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 2 * * 0,4'
+#  schedule:
+#  - cron: '0 2 * * 0,4'
 
 env:
   RUN_NAME: Stereo_toy

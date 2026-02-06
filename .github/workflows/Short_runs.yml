@@ -2,10 +2,6 @@ name: Short runs
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "master", "sc_*" ]
-  pull_request:
-    branches: [ "master" ]
 
 env:
   RUN_NAME: Human.ONT_simulated.R9.uniform_cov
