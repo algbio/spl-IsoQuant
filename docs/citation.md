@@ -1,5 +1,7 @@
 # Citation
 
-The paper describing IsoQuant algorithms and benchmarking is available at [10.1038/s41587-022-01565-y](https://doi.org/10.1038/s41587-022-01565-y).
+- [Spatial isoform sequencing at sub-micrometer single-cell resolution reveals novel patterns of spatial isoform variability in brain cell types
+L Michielsen, AD Prjibelski, C Foord et al., bioRxiv, 2025.06. 25.661563. ](https://www.biorxiv.org/content/10.1101/2025.06.25.661563.abstract)
 
-To try Spl-IsoQuant you can use the data that was used in the publication [zenodo.org/record/7611877](https://zenodo.org/record/7611877).
+- [A spatial long-read approach at near-single-cell resolution reveals developmental regulation of splicing and polyadenylation sites in distinct cortical layers and cell types
+C Foord, AD Prjibelski, W Hu et al., Nature Communications 16 (1), 8093](https://www.nature.com/articles/s41467-025-63301-9)

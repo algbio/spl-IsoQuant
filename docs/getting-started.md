@@ -12,14 +12,25 @@
 
         splisoquant.py --test
 
-*   To run Spl-IsoQuant on raw FASTQ/FASTA files use the following command
+*   To run Spl-IsoQuant on 10x single-cell data use the following command:
 
         splisoquant.py --reference /PATH/TO/reference_genome.fasta \
-        --genedb /PATH/TO/gene_annotation.gtf \
-        --fastq /PATH/TO/sample1.fastq.gz /PATH/TO/sample2.fastq.gz \
-        --data_type (assembly|pacbio_ccs|nanopore) -o OUTPUT_FOLDER
+        --genedb /PATH/TO/gene_annotation.gtf --complete_genedb \
+        --fastq /PATH/TO/10x.fastq.gz --barcode_whitelist /PATH/TO/barcodes.tsv \
+        --barcode2spot /PATH/TO/barcodes_to_celltype.tsv
+        --mode tenX_v3 --data_type (pacbio_ccs|nanopore) -o OUTPUT_FOLDER
 
-    For example, using the toy data provided within this repository,
+*    Or provide your own table with barcoded reads:
+
+
+        splisoquant.py --reference /PATH/TO/reference_genome.fasta \
+        --genedb /PATH/TO/gene_annotation.gtf --complete_genedb \
+        --fastq /PATH/TO/10x.fastq.gz --barcoded_reads /PATH/TO/barcoded_reads.tsv \
+        --barcode2spot /PATH/TO/barcodes_to_celltype.tsv
+        --mode tenX_v3 --data_type (pacbio_ccs|nanopore) -o OUTPUT_FOLDER
+
+*    For example, using the toy Stereo-seq data provided within this repository:
+
 
         ./splisoquant.py --data_type nanopore --mode stereoseq_nosplit  \
         --fastq /home/andreyp/ablab/spl-IsoQuant/tests/stereo/S1.4K.subsample.fq.gz \
@@ -29,26 +40,10 @@
         --complete_genedb --output splisoquant_test  -p TEST_DATA
 
 
-* To run Spl-IsoQuant on aligned reads (make sure your BAM is sorted and indexed) use the following command:
+* You can also define your own molecule structure using the [molecule description format (MDF)](https://algbio.githu.io/spl-IsoQuant/single_cell.html#molecule-description-format-mdf) 
+and provided to Spl-IsoQuant via `--molecule` option:
 
         splisoquant.py --reference /PATH/TO/reference_genome.fasta \
-        --genedb /PATH/TO/gene_annotation.gtf \
-        --bam /PATH/TO/sample1.sorted.bam /PATH/TO/sample2.sorted.bam \
-        --data_type (assembly|pacbio_ccs|nanopore) -o OUTPUT_FOLDER
-
-    For example, using the toy data provided within this repository,
-
-        splisoquant.py --reference tests/toy_data/MAPT.Mouse.reference.fasta \
-        --genedb tests/toy_data/MAPT.Mouse.genedb.gtf \
-        --fastq tests/toy_data/MAPT.Mouse.ONT.simulated.fastq \
-        --data_type nanopore -o toy_data_out
-
-* If using official annotations containing `gene` and `transcript` features use `--complete_genedb` to save time.
-
-* Using reference annotation is optional since version 3.0, you may perform de novo transcript discovery without providing `--genedb` option:
-
-        splisoquant.py --reference /PATH/TO/reference_genome.fasta \
-        --fastq /PATH/TO/sample1.fastq.gz /PATH/TO/sample2.fastq.gz \
-        --data_type (assembly|pacbio|nanopore) -o OUTPUT_FOLDER
-
-* If multiple files are provided, Spl-IsoQuant will create a single output annotation and a single set of gene/transcript expression tables.
+        --genedb /PATH/TO/gene_annotation.gtf --complete_genedb \
+        --fastq /PATH/TO/10x.fastq.gz --molecule /PATH/TO/my_protocol.mdf \
+        --mode custom_sc --data_type (pacbio_ccs|nanopore) -o OUTPUT_FOLDER

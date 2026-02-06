@@ -4,10 +4,10 @@
 [![GitHub Downloads](https://img.shields.io/github/downloads/algbio/spl-IsoQuant/total.svg?style=social&logo=github&label=Download)](https://github.com/algbio/spl-IsoQuant/releases)
 
 
-# Spl-IsoQuant
+<img src="docs/splisoquant_logo.png" width="400" alt="IsoQuant">
 
 This is a fork of the original [IsoQuant](https://github.com/ablab/IsoQuant) project.
-The same group maintains both repositories equally well.
+The same group maintains both repositories equally..
 
 [Full Spl-IsoQuant documentation can be found here](https://algbio.github.io/spl-IsoQuant/).
 Information in this README is given only for convenience and is not a full user manual.
@@ -24,13 +24,18 @@ Current version: see `VERSION` file.
 Spl-IsoQuant is a tool for **single-cell and spatial long-read transcriptomics** analysis.
 It performs genome-based analysis of long RNA reads from platforms such as PacBio or
 Oxford Nanopore, with specialized support for single-cell and spatial protocols.
-Spl-IsoQuant allows to reconstruct and quantify transcript models with
-high precision and decent recall. If the reference annotation is given, Spl-IsoQuant also
-assigns reads to the annotated isoforms based on their intron and exon structure.
-Spl-IsoQuant further performs annotated gene, isoform, exon and intron quantification.
-If reads are grouped (e.g. according to cell type or spatial location), counts are reported according to the provided grouping.
+Spl-IsoQuant is capable of perfroming barcode and UMI detection for various sequencing protocols, 
+UMI deduplication and barcode-aware quantification of reads, where reads are grouped
+(e.g. according to cell types or spatial location), counts are reported according to the provided grouping.
+We recommend providing smaller barcode whitelists (e.g. obtained from short-read sequencing) to achieve higher accuracy. 
 
-Latest Spl-IsoQuant version can be downloaded from [github.com/algbio/spl-IsoQuant/releases/latest](https://github.com/algbio/spl-IsoQuant/releases/latest).
+Similarly to IsoQuant, it can also perform novel transcript discovery. 
+However, in single-cell/spatial mode, Spl-IsoQuant will only discover 
+novel isoforms for known genes, as reads that are not assigned to any 
+known gene are discarded during the PCR deduplication step. 
+To achieve full transcript discovery, run Spl-IsoQuant in bulk mode.
+
+The latest Spl-IsoQuant version can be downloaded from [github.com/algbio/spl-IsoQuant/releases/latest](https://github.com/algbio/spl-IsoQuant/releases/latest).
 
 Full Spl-IsoQuant documentation is available at [algbio.github.io/spl-IsoQuant](https://algbio.github.io/spl-IsoQuant/).
 
@@ -43,21 +48,25 @@ Spl-IsoQuant supports all kinds of long RNA data:
 
 Reads must be provided in FASTQ/FASTA format (can be gzipped) or unmapped BAM format.
 If you have already aligned your reads to the reference genome, simply provide sorted and indexed BAM files.
-Spl-IsoQuant expects reads to contain polyA tails. For more reliable transcript model construction do not trim polyA tails.
 
-Spl-IsoQuant can also take aligned Illumina reads to correct long-read spliced alignments. However, short reads are _not_
-used to discover transcript models or compute abundances.
+Spl-IsoQuant supports the following protocols:
+
+* 10x 3' v3 single-cell;
+* 10x 3' Visium spatial data;
+* 10x Visium HD;
+* Curio Biosciences spatial data;
+* Stereo-seq spatial data;
+* Any other single-cell or spatial protocol with barcode and UMI sequences (see more about [custom molecule description](https://algbio.github.io/spl-IsoQuant/single_cell.html#molecule-description-format-mdf)).
 
 
 ## Supported reference data
 
 Reference genome is mandatory and should be provided in multi-FASTA format (can be gzipped).
 
-Reference gene annotation is not mandatory, but is likely to increase precision and recall.
+Reference gene annotation is also mandatory for single-cell / spatial analysis.
 It can be provided in GFF/GTF format (can be gzipped).
 
 Pre-constructed `minimap2` index can also be provided to reduce mapping time.
-
 
 ## Citation
 
@@ -70,7 +79,7 @@ C Foord, AD Prjibelski, W Hu et al., Nature Communications 16 (1), 8093](https:/
 ## Feedback and bug reports
 Your comments, bug reports, and suggestions are very welcome. They will help us to further improve Spl-IsoQuant. If you have any troubles running Spl-IsoQuant, please send us `isoquant.log` from the `<output_dir>` directory.
 
-You can leave your comments and bug reports at our [GitHub repository tracker](https://github.com/algbio/spl-IsoQuant/issues) or send them via email: isoquant.rna@gmail.com.
+You can leave your comments and bug reports at our [GitHub repository tracker](https://github.com/algbio/spl-IsoQuant/issues).
 
 
 
@@ -90,43 +99,43 @@ You can leave your comments and bug reports at our [GitHub repository tracker](h
 
         splisoquant.py --test
 
-*   To run Spl-IsoQuant on raw FASTQ/FASTA files use the following command
+*  To run Spl-IsoQuant on 10x single-cell data use the following command:
 
-        splisoquant.py --reference /PATH/TO/reference_genome.fasta \
-        --genedb /PATH/TO/gene_annotation.gtf \
-        --fastq /PATH/TO/sample1.fastq.gz /PATH/TO/sample2.fastq.gz \
-        --data_type (assembly|pacbio_ccs|nanopore) -o OUTPUT_FOLDER
+```
+splisoquant.py --reference /PATH/TO/reference_genome.fasta \
+--genedb /PATH/TO/gene_annotation.gtf --complete_genedb \
+--fastq /PATH/TO/10x.fastq.gz --barcode_whitelist /PATH/TO/barcodes.tsv \
+--barcode2spot /PATH/TO/barcodes_to_celltype.tsv
+--mode tenX_v3 --data_type (pacbio_ccs|nanopore) -o OUTPUT_FOLDER
+```
 
-    For example, using the toy data provided within this repository,
+*  Or provide your own table with barcoded reads:
 
-        ./splisoquant.py --data_type nanopore --mode stereoseq_nosplit  \
-        --fastq /home/andreyp/ablab/spl-IsoQuant/tests/stereo/S1.4K.subsample.fq.gz \
-        --barcode_whitelist /home/andreyp/ablab/spl-IsoQuant/tests/stereo/barcodes.tsv \
-        --reference /home/andreyp/ablab/spl-IsoQuant/tests/stereo/GRCm39.chrX.7.fa.gz \
-        --genedb /home/andreyp/ablab/spl-IsoQuant/tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf \
-        --complete_genedb --output splisoquant_test  -p TEST_DATA
+```
+splisoquant.py --reference /PATH/TO/reference_genome.fasta \
+--genedb /PATH/TO/gene_annotation.gtf --complete_genedb \
+--fastq /PATH/TO/10x.fastq.gz --barcoded_reads /PATH/TO/barcoded_reads.tsv \
+--barcode2spot /PATH/TO/barcodes_to_celltype.tsv
+--mode tenX_v3 --data_type (pacbio_ccs|nanopore) -o OUTPUT_FOLDER
+```
 
-* To run Spl-IsoQuant on aligned reads (make sure your BAM is sorted and indexed) use the following command:
+*  For example, using the toy Stereo-seq data provided within this repository:
 
-        splisoquant.py --reference /PATH/TO/reference_genome.fasta \
-        --genedb /PATH/TO/gene_annotation.gtf \
-        --bam /PATH/TO/sample1.sorted.bam /PATH/TO/sample2.sorted.bam \
-        --data_type (assembly|pacbio_ccs|nanopore) -o OUTPUT_FOLDER
+```
+./splisoquant.py --data_type nanopore --mode stereoseq_nosplit  \
+--fastq /home/andreyp/ablab/spl-IsoQuant/tests/stereo/S1.4K.subsample.fq.gz \
+--barcode_whitelist /home/andreyp/ablab/spl-IsoQuant/tests/stereo/barcodes.tsv \
+--reference /home/andreyp/ablab/spl-IsoQuant/tests/stereo/GRCm39.chrX.7.fa.gz \
+--genedb /home/andreyp/ablab/spl-IsoQuant/tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf \
+--complete_genedb --output splisoquant_test  -p TEST_DATA
+```
 
-    For example, using the toy data provided within this repository,
+*  You can also define your own molecule structure using the [molecule description format (MDF)](https://algbio.githu.io/spl-IsoQuant/single_cell.html#molecule-description-format-mdf) 
+and provided to Spl-IsoQuant via `--molecule` option:
 
-        ./splisoquant.py --reference tests/toy_data/MAPT.Mouse.reference.fasta \
-        --genedb tests/toy_data/MAPT.Mouse.genedb.gtf \
-        --fastq tests/toy_data/MAPT.Mouse.ONT.simulated.fastq \
-        --data_type nanopore -o toy_data_out
-
-* If using official annotations containing `gene` and `transcript` features use `--complete_genedb` to save time.
-
-* Using reference annotation is optional since version 3.0, you may perform de novo transcript discovery without providing `--genedb` option:
-
-        splisoquant.py --reference /PATH/TO/reference_genome.fasta \
-        --fastq /PATH/TO/sample1.fastq.gz /PATH/TO/sample2.fastq.gz \
-        --data_type (assembly|pacbio|nanopore) -o OUTPUT_FOLDER
-
-* If multiple files are provided, Spl-IsoQuant will create a single output annotation and a single set of gene/transcript expression tables.
-
+```
+splisoquant.py --reference /PATH/TO/reference_genome.fasta \
+--genedb /PATH/TO/gene_annotation.gtf --complete_genedb \
+--fastq /PATH/TO/10x.fastq.gz --molecule /PATH/TO/my_protocol.mdf \
+--mode custom_sc --data_type (pacbio_ccs|nanopore) -o OUTPUT_FOLDER
+```

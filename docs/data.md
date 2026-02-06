@@ -11,21 +11,26 @@ Spl-IsoQuant support all kinds of long RNA data:
 Reads must be provided in FASTQ/FASTA format (can be gzipped) or unmapped BAM format.  
 If you have already aligned your reads to the reference genome, simply provide sorted and indexed BAM files.
 
-Spl-IsoQuant expect reads to contain polyA tails. For more reliable transcript model construction do not trim polyA tails.
+Spl-IsoQuant supports the following protocols:
 
-Spl-IsoQuant can also take aligned Illumina reads to correct long-read spliced alignments. However, short reads are _not_
-used to discover transcript models or compute abundances.
+* 10x 3' v3 single-cell;
+* 10x 3' Visium spatial data;
+* 10x Visium HD;
+* Curio Biosciences spatial data;
+* Stereo-seq spatial data;
+* Any other single-cell or spatial protocol with barcode and UMI sequences (see more about [custom molecule description](https://algbio.github.io/spl-IsoQuant/single_cell.html#molecule-description-format-mdf)).
 
-<a name="sec1.2"></a>
+
 ## Supported reference data
 
 Reference genome should be provided in multi-FASTA format (can be gzipped).
-Reference genome is mandatory even when BAM files are provided.
+The reference genome is mandatory even when BAM files are provided.
 
-Reference gene annotation is not mandatory, but is likely to increase precision and recall.
-It can be provided in GFF/GTF format (can be gzipped).
-In this case it will be converted to [gffutils](https://pythonhosted.org/gffutils/installation.html) database. Information on converted databases will be stored in your `~/.config/Spl-IsoQuant/db_config.json` to increase speed of future runs. You can also provide gffutils database manually. Make sure that chromosome/scaffold names are identical in FASTA file and gene annotation.
-Note, that gffutils databases may not work correctly on NFS shares. It is possible to set a designated folder for 
+Reference gene annotation is also mandatory for single-cell / spatial analysis
+It should be provided in GFF/GTF format (can be gzipped).
+It will be converted to [gffutils](https://pythonhosted.org/gffutils/installation.html) database. Information on converted databases will be stored in your `~/.config/Spl-IsoQuant/db_config.json` to increase speed of future runs. You can also provide gffutils database manually. 
+Make sure that chromosome/scaffold names are identical in FASTA file and gene annotation.
+Note that gffutils databases may not work correctly on NFS shares. It is possible to set a designated folder for 
 the database with `--genedb_output` (different from the output directory).
 
 Pre-constructed aligner index can also be provided to reduce mapping time.

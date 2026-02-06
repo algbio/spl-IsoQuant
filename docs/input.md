@@ -1,28 +1,24 @@
 # Spl-IsoQuant input
 
-To run Spl-IsoQuant, you should provide:
+To run Spl-IsoQuant on single-cell or spatial, you should provide:
 
+* Reference genome in FASTA format (can be gzipped);
+* Reference gene annotation in gffutils database or GTF/GFF format (can be gzipped);
 * Long RNA reads (PacBio or Oxford Nanopore) in one of the following formats:
   * FASTA/FASTQ (can be gzipped);
   * Unmapped BAM files (typical for PacBio CCS reads);
   * Sorted and indexed BAM;
-* Reference sequence in FASTA format (can be gzipped);
-* _Optionally_, you may provide a reference gene annotation in gffutils database or GTF/GFF format (can be gzipped).
+* Barcode information in either of the following formats:
+  * A barcode whitelist file in TSV format (can be gzipped);
+  * A TSV file with mapping between reads and barcodes (can be gzipped);
+  * An MDF file with custom molecule description;
+* Optionally, you can provide a TSV file with mapping between barcodes and cell types / spatial spots.
 
 Spl-IsoQuant is also capable of using short Illumina reads to correct long-read alignments.
 
-Spl-IsoQuant can handle data from multiple _experiments_ simultaneously. Each experiment may contain multiple _samples_ (or _replicas_).
-Each experiment is processed individually. Running Spl-IsoQuant on several experiments simultaneously
-is equivalent to several separate Spl-IsoQuant runs.
-
-The output files for each experiment will be placed into a separate folder.
-Files from the same _experiment_ are used to construct a single GTF and aggregated abundance tables.
-If a single experiment contains multiple samples/replicas, per sample abundance tables are also generated.
-
 The ways of providing input files are described below.
 
-
-## Specifying input data via command line
+## Specifying input reads via command line
 
 The main options are `--fastq`, `--unmapped_bam` and `--bam` (see description below). 
 These options accept one or multiple files separated by space.
@@ -35,13 +31,25 @@ To a set a prefix for the output files use the `--prefix` option.
 This pipeline is typical for the cases when a user is
 interested in comparing expression between different replicas/conditions within the same experiment.
 
+### Barcodes and single-cell/spatial data
+
+To enable single-cell or spatial analysis, you should:
+* Specify mode via `--mode` option;
+* Provide barcode information using one of the following options:
+  * A barcode whitelist file via `--barcode_whitelist`;
+  * A TSV able with mapping between reads and barcodes via `--barcoded_reads`;
+  * An MDF file with custom molecule description via `--molecule`;
+* Additionally, you can provide a table with mapping between barcodes and cell types / spatial spots via `--barcode2spot`.
+
+See details [here](single_cell.md) and [here](cmd.md#single-cell-and-spatial-transcriptomics-options).
+
 ### Short reads for alignment correction
 
 A BAM file with Illumina reads can be provided via `--illumina_bam`. It cannot be the only input, but may only be used with either `--bam` or `--fastq`.
 The option accepts one or multiple bam files separated by space. All files will be combined and used to correct offsets between introns in long and short reads as well as skipped exons.
 
 
-## Specifying input data via yaml file
+## Specifying input reads via yaml file
 
 To provide all input files in a single description file, you can use a [YAML](https://www.redhat.com/en/topics/automation/what-is-yaml) file via `--yaml` (see description below).
 You can provide multiple experiments in a single YAML file with each experiment containing an arbitrary number of smaples/replicas.

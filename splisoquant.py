@@ -1043,7 +1043,7 @@ def call_barcodes(args):
 
 
 def run_pipeline(args):
-    logger.info(" === IsoQuant pipeline started === ")
+    logger.info(" === Spl-IsoQuant pipeline started === ")
     logger.info("Python version: %s" % sys.version)
     logger.info("gffutils version: %s" % gffutils.__version__)
     logger.info("pysam version: %s" % pysam.__version__)
@@ -1079,7 +1079,7 @@ def run_pipeline(args):
     if len(args.input_data.samples) > 1 and args.genedb:
         combine_counts(args.input_data, args.output)
 
-    logger.info(" === IsoQuant pipeline finished === ")
+    logger.info(" === Spl-IsoQuant pipeline finished === ")
 
 
 # Test mode is triggered by --test option
