@@ -1111,7 +1111,7 @@ class TestMode(argparse.Action):
         with open(os.path.join(self.out_dir, 'isoquant.log'), 'r') as f:
             log = f.read()
 
-        correct_results = ['unique: 6', 'Unique gene-barcodes pairs: 2', 'Barcode detected: 2']
+        correct_results = ['known: 4', 'Unique gene-barcodes pairs: 2', 'Barcode detected: 2']
         return all([result in log for result in correct_results])
 
 
