@@ -7,7 +7,7 @@
 <img src="docs/splisoquant_logo.png" width="400" alt="IsoQuant">
 
 This is a fork of the original [IsoQuant](https://github.com/ablab/IsoQuant) project.
-The same group maintains both repositories equally..
+The same group maintains both repositories equally.
 
 [Full Spl-IsoQuant documentation can be found here](https://algbio.github.io/spl-IsoQuant/).
 Information in this README is given only for convenience and is not a full user manual.
