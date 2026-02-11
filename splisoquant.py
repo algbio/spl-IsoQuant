@@ -96,7 +96,7 @@ def parse_args(cmd_args=None, namespace=None):
 
     parser.add_argument("--full_help", action='help', help="show full list of options")
 
-    parser.add_argument("--test", action=TestMode, nargs=0, help="run IsoQuant on toy dataset")
+    parser.add_argument("--test", action=TestMode, nargs=0, help="run Spl-IsoQuant on toy dataset")
     add_hidden_option('--debug', action='store_true', default=False,
                       help='Debug log output.')
 
@@ -322,13 +322,13 @@ def parse_args(cmd_args=None, namespace=None):
     add_hidden_option("--cage", help="bed file with CAGE peaks", type=str, default=None)
     add_hidden_option("--cage-shift", type=int, default=50, help="interval before read start to look for CAGE peak")
 
-    isoquant_version = "3.4.0"
+    isoquant_version = "2.2.1"
     try:
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "VERSION")) as version_f:
             isoquant_version = version_f.readline().strip()
     except FileNotFoundError:
         pass
-    parser.add_argument('--version', '-v', action='version', version='IsoQuant ' + isoquant_version)
+    parser.add_argument('--version', '-v', action='version', version='Spl-IsoQuant ' + isoquant_version)
 
     args = parser.parse_args(cmd_args, namespace)
 
@@ -711,7 +711,7 @@ def set_logger(args, logger_instance):
     if all(ch.get_name() != h.get_name() for h in logger_instance.handlers):
         logger_instance.addHandler(ch)
 
-    logger.info("Running IsoQuant version " + args._version)
+    logger.info("Running Spl-IsoQuant version " + args._version)
 
 
 def set_data_dependent_options(args):
@@ -1096,7 +1096,7 @@ class TestMode(argparse.Action):
                    '--genedb', os.path.join(source_dir, 'tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf'),
                    '--clean_start', '--data_type', 'nanopore', '--mode', 'stereoseq_nosplit', '--complete_genedb', '--force', '-p', 'TEST_DATA']
         print('=== Running in test mode === ')
-        print("Running IsoQuant in test mode with the following options:")
+        print("Running Spl-IsoQuant in test mode with the following options:")
         print(' '.join(options))
         print('Any other option is ignored ')
         main(options)
