@@ -1,5 +1,13 @@
 # Spl-IsoQuant changelog
 
+## Spl-IsoQuant 2.2.1, 11 February 2026
+
+- Fix Python 3.8 compatibility.
+
+- Fix MTX conversion.
+
+- Fix`--test` message.
+
 ## Spl-IsoQuant 2.2.0, 5 February 2026
 
 Support for 10x single-cell v3 and 10x Visium 3' data.
