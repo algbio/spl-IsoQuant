@@ -130,7 +130,7 @@ splisoquant.py --reference /PATH/TO/reference_genome.fasta \
 --complete_genedb --output splisoquant_test  -p TEST_DATA
 ```
 
-*  You can also define your own molecule structure using the [molecule description format (MDF)](https://algbio.githu.io/spl-IsoQuant/single_cell.html#molecule-description-format-mdf) 
+*  You can also define your own molecule structure using the [molecule description format (MDF)](https://algbio.github.io/spl-IsoQuant/single_cell.html#molecule-description-format-mdf)
 and provided to Spl-IsoQuant via `--molecule` option:
 
 ```
