@@ -731,7 +731,7 @@ def set_logger(args):
     with open(log_file, "w") as f:
         f.write("Command line: " + args._cmd_line + '\n')
     setup_worker_logging(log_file, output_level)
-    logger.info("Running IsoQuant version " + args._version)
+    logger.info("Running Spl-IsoQuant version " + args._version)
 
 
 def set_data_dependent_options(args):
@@ -1162,7 +1162,7 @@ class TestMode(argparse.Action):
         with open(os.path.join(self.out_dir, 'isoquant.log'), 'r') as f:
             log = f.read()
 
-        correct_results = ['known: 4', 'Unique gene-barcodes pairs: 2', 'Barcode detected: 2']
+        correct_results = ['known: 4', 'Spliced reads saved: 1', 'Barcode detected: 2']
         return all([result in log for result in correct_results])
 
 
@@ -1192,12 +1192,12 @@ if __name__ == "__main__":
             print_exc(file=strout)
             s = strout.getvalue()
             if s:
-                logger.critical("IsoQuant failed with the following error, please, submit this issue to "
-                                "https://github.com/ablab/IsoQuant/issues\n" + s)
+                logger.critical("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                                "https://github.com/algbio/spl-IsoQuant/issues\n" + s)
             else:
                 print_exc()
         else:
-            sys.stderr.write("IsoQuant failed with the following error, please, submit this issue to "
-                             "https://github.com/ablab/IsoQuant/issues\n")
+            sys.stderr.write("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                             "https://github.com/algbio/spl-IsoQuant/issues\n")
             print_exc()
         sys.exit(IsoQuantExitCode.UNCAUGHT_EXCEPTION)
