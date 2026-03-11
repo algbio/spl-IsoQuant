@@ -1,15 +1,15 @@
-name: Barcode Custom SC 10x
+name: SC Mouse Visium HD barcode2barcode Allinfo
 
 on:
   workflow_dispatch:
-#  schedule:
-#  - cron: '0 4 * * 1'
+  schedule:
+  - cron: '30 5 * * 6'
 
 env:
-  LAUNCHER: ${{github.workspace}}/tests/github/run_barcode_test.py
-  CFG_DIR: /abga/work/andreyp/ci_isoquant/data/barcodes
+  LAUNCHER: ${{github.workspace}}/tests/github/run_pipeline.py
+  CFG_DIR: /abga/work/andreyp/ci_isoquant/data
   BIN_PATH: /abga/work/andreyp/ci_isoquant/bin/
-  OUTPUT_BASE: /abga/work/andreyp/ci_isoquant/output/${{github.ref_name}}/barcodes/
+  OUTPUT_BASE: /abga/work/andreyp/ci_isoquant/output/${{github.ref_name}}/
 
 concurrency:
   group: ${{github.workflow}}
@@ -51,7 +51,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     runs-on:
       labels: [isoquant]
-    name: 'Running custom_sc 10x barcode detection QC'
+    name: 'Running SC Mouse Visium HD barcode2barcode pipeline with allinfo QC'
 
     steps:
       - name: 'Cleanup'
@@ -65,20 +65,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'Custom SC 10x small (ArrayKmerIndexer)'
-        if: always()
+      - name: 'SC Mouse Visium HD barcode2barcode allinfo'
         shell: bash
         env:
-          STEP_NAME: Mouse.10x.custom_sc.small
-        run: |
-          export PATH=$PATH:${{env.BIN_PATH}}
-          python3 ${{env.LAUNCHER}} ${{env.CFG_DIR}}/${{env.STEP_NAME}}.cfg -o ${{env.OUTPUT_BASE}}
-
-      - name: 'Custom SC 10x large (Array2BitKmerIndexer)'
-        if: always()
-        shell: bash
-        env:
-          STEP_NAME: Mouse.10x.custom_sc.large
+          STEP_NAME: SC.Mouse.VisiumHD.barcode2barcode.allinfo
         run: |
           export PATH=$PATH:${{env.BIN_PATH}}
           python3 ${{env.LAUNCHER}} ${{env.CFG_DIR}}/${{env.STEP_NAME}}.cfg -o ${{env.OUTPUT_BASE}}

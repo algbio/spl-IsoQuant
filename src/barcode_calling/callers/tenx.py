@@ -19,6 +19,7 @@ from ..common import (
     find_polyt_start, reverese_complement,
     find_candidate_with_max_score_ssw, find_candidate_with_max_score_ssw_var_len,
     detect_exact_positions, str_to_2bit,
+    find_optimal_kmer_size,
 )
 from .base import TenXBarcodeDetectionResult
 
@@ -46,20 +47,29 @@ class TenXBarcodeDetector:
             umi_list: Optional list of known UMIs for validation
         """
         self.r1_indexer = KmerIndexer([TenXBarcodeDetector.R1], kmer_size=7)
+        bc_length = len(barcode_list[0])
+        bc_count = len(barcode_list)
+        if bc_count > 1000000:
+            logger.warning("The number of barcodes is large: barcode calling may take substantial amount of time and RAM, and affect the accuracy")
+            logger.warning("We suggest to use a sub-list of barcodes derived from short-read analysis whenever possible")
+
+        self.k = find_optimal_kmer_size(bc_length, bc_count)
         if len(barcode_list) <= 100000:
-            self.barcode_indexer = ArrayKmerIndexer(barcode_list, kmer_size=6)
+            self.barcode_indexer = ArrayKmerIndexer(barcode_list, kmer_size=self.k)
             self.max_barcodes_hits = 20
             self.min_matching_kmers = 1
             self.min_score = 14
             self.score_diff = 0
         else:
-            self.barcode_indexer = Array2BitKmerIndexer([str_to_2bit(b) for b in barcode_list], kmer_size=6, seq_len=self.BARCODE_LEN_10X)
+            barcode_bit_list = [str_to_2bit(b) for b in barcode_list]
+            self.barcode_indexer = Array2BitKmerIndexer(barcode_bit_list, kmer_size=self.k, seq_len=self.BARCODE_LEN_10X)
             self.max_barcodes_hits = 10
             self.min_matching_kmers = 2
-            self.min_score = 15
+            self.min_score = 16
             self.score_diff = 1
 
-        logger.debug("Min score set to %d" % self.min_score)
+        logger.info("Indexed %d barcodes of length %d with k-mer size %d" % (len(barcode_list), bc_length, self.k))
+        logger.info("Minimal alignment score set to %d" % self.min_score)
 
     def find_barcode_umi(self, read_id: str, sequence: str) -> TenXBarcodeDetectionResult:
         """
@@ -136,6 +146,7 @@ class TenXBarcodeDetector:
 
         if barcode is None:
             return TenXBarcodeDetectionResult(read_id, polyT=polyt_start, r1=r1_end)
+
         logger.debug("Found: %s %d-%d" % (barcode, bc_start, bc_end))
         # position of barcode end in the reference: end of potential barcode minus bases to the alignment end
         read_barcode_end = barcode_start + bc_end - 1
@@ -179,6 +190,15 @@ class TenXBarcodeDetector:
     @classmethod
     def header(cls):
         return cls.result_type().header()
+
+
+class TenXv2BarcodeDetector(TenXBarcodeDetector):
+    """TenX v2 barcode detector."""
+    UMI_LEN = 10
+
+    def __init__(self, barcode_list: List[str]):
+        """Initialize TenX v2 detector."""
+        super().__init__(barcode_list)
 
 
 class VisiumHDBarcodeDetector:
@@ -279,7 +299,7 @@ class VisiumHDBarcodeDetector:
             barcode1_start = r1_end + self.UMI_LEN_VIS + 1
             barcode1_end = barcode1_start + self.BARCODE1_LEN_VIS - 1
             potential_barcode1 = sequence[barcode1_start:barcode1_end + 1]
-            matching_barcodes1 = self.part1_barcode_indexer.get_occurrences(potential_barcode1)
+            matching_barcodes1 = self.part1_barcode_indexer.get_occurrences(potential_barcode1, max_hits=self.max_barcodes_hits)
             barcode1, bc1_score, bc1_start, bc1_end = \
                 find_candidate_with_max_score_ssw_var_len(matching_barcodes1, potential_barcode1, min_score=self.min_score)
             logger.debug("Barcode 1: %s, %s" % (potential_barcode1, barcode1))
@@ -288,7 +308,7 @@ class VisiumHDBarcodeDetector:
             barcode2_start = real_bc1_end + 1
             barcode2_end = barcode2_start + self.BARCODE2_LEN_VIS - 1
             potential_barcode2 = sequence[barcode2_start:barcode2_end + 1]
-            matching_barcodes2 = self.part2_barcode_indexer.get_occurrences(potential_barcode2)
+            matching_barcodes2 = self.part2_barcode_indexer.get_occurrences(potential_barcode2, max_hits=self.max_barcodes_hits)
             barcode2, bc2_score, bc2_start, bc2_end = \
                 find_candidate_with_max_score_ssw_var_len(matching_barcodes2, potential_barcode2, min_score=self.min_score)
             logger.debug("Barcode 2: %s, %s" % (potential_barcode2, barcode2))
@@ -302,7 +322,7 @@ class VisiumHDBarcodeDetector:
         barcode2_end = polyt_start - 1 - self.SEPARATOR_BASES
         barcode2_start = barcode2_end - self.BARCODE2_LEN_VIS + 1
         potential_barcode2 = sequence[barcode2_start:barcode2_end + 1]
-        matching_barcodes2 = self.part2_barcode_indexer.get_occurrences(potential_barcode2)
+        matching_barcodes2 = self.part2_barcode_indexer.get_occurrences(potential_barcode2, max_hits=self.max_barcodes_hits)
         barcode2, bc2_score, bc2_start, bc2_end = \
             find_candidate_with_max_score_ssw_var_len(matching_barcodes2, potential_barcode2, min_score=self.min_score)
         logger.debug("Barcode 2: %s, %s" % (potential_barcode2, barcode2))
@@ -311,7 +331,7 @@ class VisiumHDBarcodeDetector:
         barcode1_end = real_bc2_start - 1
         barcode1_start = barcode1_end - self.BARCODE1_LEN_VIS + 1
         potential_barcode1 = sequence[barcode1_start:barcode1_end + 1]
-        matching_barcodes1 = self.part1_barcode_indexer.get_occurrences(potential_barcode1)
+        matching_barcodes1 = self.part1_barcode_indexer.get_occurrences(potential_barcode1, max_hits=self.max_barcodes_hits)
         barcode1, bc1_score, bc1_start, bc1_end = \
             find_candidate_with_max_score_ssw_var_len(matching_barcodes1, potential_barcode1, min_score=self.min_score)
         logger.debug("Barcode 1: %s, %s" % (potential_barcode1, barcode1))

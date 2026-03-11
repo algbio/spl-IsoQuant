@@ -1,5 +1,17 @@
 # Spl-IsoQuant changelog
 
+## Spl-IsoQuant 2.3.0, 12 March 2026
+
+- Fix Python 3.14 compatibility.
+
+- Add `--barcoded_bam` option for reading barcodes and UMIs directly from a input BAM.
+
+- Add `--barcode2barcode` option for Visium HD data processing.
+
+- Dramatic speed-up for 10x and universal barcode calling on large whitelists.
+
+- Per-barcode counts grouping is now performed automatically if the barcodes are set.
+
 ## Spl-IsoQuant 2.2.1, 11 February 2026
 
 - Fix Python 3.8 compatibility.

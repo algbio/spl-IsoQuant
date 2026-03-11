@@ -41,7 +41,7 @@ Full Spl-IsoQuant documentation is available at [algbio.github.io/spl-IsoQuant](
 
 ## Supported sequencing data
 
-Spl-IsoQuant supports all kinds of long RNA data:
+Spl-IsoQuant supports all kinds of long-read RNA data:
 * PacBio CCS
 * ONT dRNA / ONT cDNA
 * Assembled / corrected transcript sequences
@@ -87,15 +87,15 @@ You can leave your comments and bug reports at our [GitHub repository tracker](h
 
 *   Full Spl-IsoQuant documentation is available at [algbio.github.io/spl-IsoQuant](https://algbio.github.io/spl-IsoQuant/).
 
-*   Spl-IsoQuant can be downloaded from [github.com/algbio/spl-IsoQuant](https://github.com/algbio/spl-IsoQuant):
+*   Spl-IsoQuant can be downloaded from [github.com/algbio/spl-IsoQuant](https://github.com/algbio/spl-IsoQuant) and installed via:
 
         git clone https://github.com/algbio/spl-IsoQuant.git
         cd spl-IsoQuant
         pip install -r requirements.txt
 
-*   If installing manually, you will need Python3 (3.8 or higher), [gffutils](https://pythonhosted.org/gffutils/installation.html), [pysam](https://pysam.readthedocs.io/en/latest/index.html), [pybedtools](https://daler.github.io/pybedtools/), [biopython](https://biopython.org/) and some other common Python libraries to be installed. See `requirements.txt` for details. You will also need to have [minimap2](https://github.com/lh3/minimap2) and [samtools](http://www.htslib.org/download/) to be in your `$PATH` variable.
+The installation typically takes no more than a few minutes.
 
-*   Verify your installation by running:
+*   Verify your installation by running (typically takes less than 1 minute):
 
         splisoquant.py --test
 
