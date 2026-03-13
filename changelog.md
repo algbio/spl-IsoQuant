@@ -1,10 +1,12 @@
 # Spl-IsoQuant changelog
 
-## Spl-IsoQuant 2.3.0, 12 March 2026
+## Spl-IsoQuant 2.3.0, 13 March 2026
+
+- TSV output files do not have a `#` in headers for easier downstream processing (thanks to @yinshiyi).
 
 - Fix Python 3.14 compatibility.
 
-- Add `--barcoded_bam` option for reading barcodes and UMIs directly from a input BAM.
+- Add `--barcoded_bam` flag for reading barcodes and UMIs directly from a input BAM.
 
 - Add `--barcode2barcode` option for Visium HD data processing.
 
@@ -28,7 +30,7 @@ Universal barcode detection via user-defined molecule structure.
 
 `--read_group` now supports multiple read grouping strategies. 
 You can now simultaneously group counts by samples, BAM tags, barcode and barcode attributesm, 
-read attributes provided in separate TSV files or within read ids themselves.  
+read attributes provided in separate TSV files or within read ids themselves.
 
 New `--large_output` option to control which large output files are generated.
 
