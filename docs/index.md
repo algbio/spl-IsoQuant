@@ -15,7 +15,7 @@ known gene are discarded during the PCR deduplication step.
 To achieve full transcript discovery, run Spl-IsoQuant in bulk mode.
 
 
-Latest Spl-IsoQuant version can be downloaded from [https://github.com/algbio/spl-IsoQuant/releases/latest](https://github.com/algbio/spl-IsoQuant/releases/latest).
+The latest Spl-IsoQuant version can be downloaded from [https://github.com/algbio/spl-IsoQuant/releases/latest](https://github.com/algbio/spl-IsoQuant/releases/latest).
 
 ### Spl-IsoQuant pipeline
 ![Pipeline](isoquant_pipeline.png)

@@ -17,11 +17,11 @@ rm -rf */__pycache__/
 rm -f */*/*.pyc
 rm -f */*/*.pyo
 rm -rf */*/__pycache__/
-rm -rf ./tests/out*/
-rm -rf ./tests/.config/
+rm -rf ./isoquant_tests/out*/
+rm -rf ./isoquant_tests/.config/
 
-cp -r ./src $TARGET_DIR/
-cp -r ./tests $TARGET_DIR/
+cp -r ./isoquant_lib $TARGET_DIR/
+cp -r ./isoquant_tests $TARGET_DIR/
 cp -r ./docs $TARGET_DIR/
 
 rm -fr $TARGET_DIR/tests/short_reads_toy/
@@ -29,13 +29,14 @@ rm -fr $TARGET_DIR/tests/simple_data/
 
 cp splisoquant.py $TARGET_DIR/
 cp splisoquant_detect_barcodes.py $TARGET_DIR/
-cp visualize.py $TARGET_DIR/
+cp splisoquant_visualize.py $TARGET_DIR/
 cp README.md $TARGET_DIR/
 cp VERSION $TARGET_DIR/
 cp LICENSE $TARGET_DIR/
 cp changelog.md $TARGET_DIR/
 cp requirements.txt $TARGET_DIR/
 cp CODE_OF_CONDUCT.md $TARGET_DIR/
+cp GPL2.txt $TARGET_DIR/
 
 tar -pczf $TARGET_DIR.tar.gz $TARGET_DIR
 rm -r $TARGET_DIR

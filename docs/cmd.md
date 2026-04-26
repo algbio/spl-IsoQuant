@@ -36,6 +36,8 @@ can be provided only when raw reads are used as an input (constructed automatica
     Gene database in gffutils database format or GTF/GFF format (can be gzipped).
 If you use official gene annotations we recommend to set `--complete_genedb` option.
 
+You can convert a GTF/GFF to a gffutils database (or vise versa) via `isoquant_lib/gtf2db.py` script.
+
 `--complete_genedb`
     Set this flag if gene annotation contains transcript and gene meta-features.
 Use this flag when providing official annotations, e.g. GENCODE.
@@ -102,8 +104,7 @@ Input file names are used as labels if not set.
 
  * `file_name` - groups reads by their original file names (or file name labels) within an experiment.
 This option makes sense when multiple files are provided.
-If multiple BAM/FASTQ files are provided and `--read_group` option is not set, Spl-IsoQuant will set `--read_group file_name`
-by default.
+If multiple BAM/FASTQ files are provided, IsoQuant will add `--read_group file_name` automatically.
 
  * `tag:TAG` - groups reads by BAM file read tag, where `TAG` is the tag name
 (e.g. `tag:RG` uses `RG` tag values as groups, commonly used for read group information).
@@ -119,10 +120,12 @@ where `FILE` is the file path, `READ_COL` is column with read ids (default: 0),
 
  * `barcode_spot` - group by barcode properties, such as spots/cell types.
 Set barcode-to-spot mapping via `--barcode2spot` option.
+IsoQuant will add `--read_group barcode_spot` automatically if `--barcode2spot` is set.
 Useful for grouping single-cell/spatial data by cell type or spatial region instead of individual barcodes.
 
  * `barcode_barcode` - group by spot-level barcode mapping for UMI deduplication.
 Set barcode-to-spot mapping via `--barcode2barcode` option.
+IsoQuant will add `--read_group barcode_barcode` automatically if `--barcode2barcode` is set.
 Multiple barcodes mapping to the same spot are grouped together.
 
 * `barcode` - groups reads by cell barcode.
@@ -131,10 +134,15 @@ It is recommended to use `--barcode2spot` file instead.
 In single-cell/spatial modes, `barcode` grouping is added automatically if no barcode-related
 grouping (`barcode`, `barcode_spot`, or `barcode_barcode`) is specified.
 
-* `none` - disable all automatic read grouping.
+* `no_auto` - disable automatic read grouping.
 By default, IsoQuant automatically adds grouping in certain cases
 (e.g. `file_name` for multiple files, `barcode` for single-cell/spatial modes).
-Use `--read_group none` to suppress this and produce only bulk counts.
+This option will enforce only explicitly stated grouping rules. 
+
+* `none` - disable all read grouping (not compatible with other options).
+By default, IsoQuant automatically adds grouping in certain cases
+(e.g. `file_name` for multiple files, `barcode` for single-cell/spatial modes).
+Use `--read_group none` to suppress all read grouping and produce only bulk counts.
 
 **Example**: `--read_group tag:RG file_name barcode_spot` creates multi-level grouping by read group tag,
 original file name, and barcode property (e.g. cell type).
@@ -189,6 +197,8 @@ Spl-IsoQuant mode for processing single-cell or spatial transcriptomics data. Av
 
 * `bulk` - standard bulk RNA-seq mode (default)
 * `tenX_v3` - 10x Genomics single-cell 3' gene expression
+* `tenX_v3_split` - 10x Genomics 3' v3 with [read splitting](single_cell.md#read-splitting-modes) for concatenated reads
+* `tenX_v2_split` - 10x Genomics 3' v2 with [read splitting](single_cell.md#read-splitting-modes) for concatenated reads
 * `visium_5prime` - 10x Genomics Visium 5' spatial transcriptomics
 * `visium_hd` - 10x Genomics Visium HD spatial transcriptomics
 * `curio` - Curio Bioscience spatial data
@@ -452,7 +462,7 @@ However, normalization method does not affect correlation/relative proportions.
 larger matrices (e.g. for single-cell experiments) will be saved to MTX (default).
 * `none` - no convertion.
 
-Note, that grouped counts can be converted to any format using `src/convert_grouped_counts.py`.
+Note, that grouped counts can be converted to any format using `isoquant_lib/convert_grouped_counts.py`.
 
 `--large_output`
     Controls which large per-read output files are generated.

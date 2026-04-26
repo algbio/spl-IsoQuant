@@ -1,14 +1,24 @@
 # Spl-IsoQuant changelog
 
+## Spl-IsoQuant 2.4.0, 26 April 2026
+
+- Improved recall for 10x single-cell barcode calling;
+
+- Added cDNA splitting mode for 10x barcode calling;
+
+- Improved exon and splice junction counts output (TSV matrix and mtx format);
+
+- Added `no_auto` read grouping mode to avoid automatic grouping.
+
 ## Spl-IsoQuant 2.3.0, 13 March 2026
 
 - TSV output files do not have a `#` in headers for easier downstream processing (thanks to @yinshiyi).
 
-- Fix Python 3.14 compatibility.
+- Fixed Python 3.14 compatibility.
 
-- Add `--barcoded_bam` flag for reading barcodes and UMIs directly from a input BAM.
+- Added `--barcoded_bam` flag for reading barcodes and UMIs directly from a input BAM.
 
-- Add `--barcode2barcode` option for Visium HD data processing.
+- Added `--barcode2barcode` option for Visium HD data processing.
 
 - Dramatic speed-up for 10x and universal barcode calling on large whitelists.
 
@@ -16,11 +26,11 @@
 
 ## Spl-IsoQuant 2.2.1, 11 February 2026
 
-- Fix Python 3.8 compatibility.
+- Fixed Python 3.8 compatibility.
 
-- Fix MTX conversion.
+- Fixed MTX conversion.
 
-- Fix`--test` message.
+- Fixed`--test` message.
 
 ## Spl-IsoQuant 2.2.0, 5 February 2026
 
