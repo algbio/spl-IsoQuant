@@ -123,10 +123,10 @@ splisoquant.py --reference /PATH/TO/reference_genome.fasta \
 
 ```
 ./splisoquant.py --data_type nanopore --mode stereoseq_nosplit  \
---fastq /home/andreyp/ablab/spl-IsoQuant/tests/stereo/S1.4K.subsample.fq.gz \
---barcode_whitelist /home/andreyp/ablab/spl-IsoQuant/tests/stereo/barcodes.tsv \
---reference /home/andreyp/ablab/spl-IsoQuant/tests/stereo/GRCm39.chrX.7.fa.gz \
---genedb /home/andreyp/ablab/spl-IsoQuant/tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf \
+--fastq isoquant_tests/stereo/S1.4K.subsample.fq.gz \
+--barcode_whitelist isoquant_tests/stereo/barcodes.tsv \
+--reference isoquant_tests/stereo/GRCm39.chrX.7.fa.gz \
+--genedb isoquant_tests/stereo/gencode.chrX.ENSMUSG00000031153.gtf \
 --complete_genedb --output splisoquant_test  -p TEST_DATA
 ```
 
