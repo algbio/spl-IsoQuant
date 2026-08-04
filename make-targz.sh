@@ -6,7 +6,7 @@
 ############################################################################
 
 VERSION="$(cat ./VERSION)"
-TARGET_DIR=IsoQuant-$VERSION
+TARGET_DIR=Spl-IsoQuant-$VERSION
 rm -rf $TARGET_DIR
 mkdir $TARGET_DIR
 
@@ -29,9 +29,9 @@ rm -fr $TARGET_DIR/isoquant_tests/short_reads_toy/
 rm -fr $TARGET_DIR/isoquant_tests/simple_data/
 rm -fr $TARGET_DIR/isoquant_tests/universal_data/
 
-cp isoquant.py $TARGET_DIR/
-cp isoquant_detect_barcodes.py $TARGET_DIR/
-cp isoquant_visualize.py $TARGET_DIR/
+cp splisoquant.py $TARGET_DIR/
+cp splisoquant_detect_barcodes.py $TARGET_DIR/
+cp splisoquant_visualize.py $TARGET_DIR/
 cp README.md $TARGET_DIR/
 cp VERSION $TARGET_DIR/
 cp LICENSE $TARGET_DIR/

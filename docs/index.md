@@ -1,9 +1,11 @@
 
 
-<img src="isoquant_logo.png" width="400" alt="IsoQuant">
+<img src="splisoquant_logo.png" width="400" alt="Spl-IsoQuant">
 
-IsoQuant is a tool for the genome-based analysis of long RNA reads, such as PacBio or
-Oxford Nanopores. IsoQuant can perform the following analysis:
+### This is a fork of the original [IsoQuant](https://github.com/ablab/IsoQuant) project. The same group maintains both repositories equally.
+
+Spl-IsoQuant is a tool for the genome-based analysis of long RNA reads, such as PacBio or
+Oxford Nanopores. Spl-IsoQuant can perform the following analysis:
 
 - **Quantification**:
   - Gene and transcript quantification;
@@ -22,13 +24,14 @@ Oxford Nanopores. IsoQuant can perform the following analysis:
   - PCR deduplication;
   - Per-barcode and per-cell-type quantification;
 
-The latest IsoQuant version can be downloaded from [https://github.com/ablab/IsoQuant/releases/latest](https://github.com/ablab/IsoQuant/releases/latest).
+The latest Spl-IsoQuant version can be downloaded from [https://github.com/algbio/spl-IsoQuant/releases/latest](https://github.com/algbio/spl-IsoQuant/releases/latest).
 
-### IsoQuant pipeline
+
+### Spl-IsoQuant pipeline for single-cell and spatial transcriptomic data
+![Pipeline](isoquant_pipeline_sc.png)
+
+### Spl-IsoQuant pipeline for bulk data
 ![Pipeline](isoquant_pipeline.png)
 
-
-### IsoQuant pipeline for single-cell and spatial transcriptomic data
-![Pipeline](isoquant_pipeline_sc.png)
 
 

@@ -387,7 +387,7 @@ def assess_split_barcode_mode_with_truth(
     multiple barcodes per read; we count a correct detection if any matches.
 
     Args:
-        input_file: Path to barcode TSV file from isoquant_detect_barcodes.py
+        input_file: Path to barcode TSV file from splisoquant_detect_barcodes.py
         truth_dict: Dict mapping read_id -> (barcode, umi) from load_truth_file()
         barcode_col: Column index for detected barcode
     """
@@ -545,7 +545,7 @@ Ground truth is extracted from read IDs in format:
                         choices=list(MODE_BARCODE_LENGTHS.keys()),
                         help='Barcode calling mode')
     parser.add_argument('--input', '-i', required=True,
-                        help='Input barcode TSV file from isoquant_detect_barcodes.py')
+                        help='Input barcode TSV file from splisoquant_detect_barcodes.py')
     parser.add_argument('--output', '-o',
                         help='Output metrics TSV file (default: stdout)')
     parser.add_argument('--barcode_col', type=int, default=1,

@@ -1,9 +1,9 @@
-# IsoQuant output files
+# Spl-IsoQuant output files
 
-IsoQuant output files will be stored in `<output_dir>`, which is set by the user.
+Spl-IsoQuant output files will be stored in `<output_dir>`, which is set by the user.
 If the output directory was not specified the files are stored in `isoquant_output`.
 
-IsoQuant output is generally controlled by the [`--analysis` option](cmd.md#pipeline-options), which can take one 
+Spl-IsoQuant output is generally controlled by the [`--analysis` option](cmd.md#pipeline-options), which can take one 
 or more values from the following list: 
 
 * `quantification`: reference-based quantification (requires gene annotation);
@@ -39,7 +39,7 @@ If `--analysis exon_quantification` is set, exon, splice junction and intron ret
 * `SAMPLE_ID.splice_junction_counts.tsv` - reference splice junction inclusion/exclusion read counts (previously named `SAMPLE_ID.intron_counts.tsv`);
 * `SAMPLE_ID.intron_retention_counts.tsv` - intron retention event counts per reference intron (same format as splice junction counts);
 
-The old per-exon inclusion/exclusion counts (previous IsoQuant exon format) are no longer produced by default. 
+The old per-exon inclusion/exclusion counts (previous Spl-IsoQuant exon format) are no longer produced by default. 
 Use `--old_exon_count_format` to additionally output them as `SAMPLE_ID.old_exon_counts.tsv` (deprecated, will be removed in a future release).
 
 #### Grouped counts in linear format
@@ -65,7 +65,7 @@ use `isoquant_lib/scripts/exon_splice_site_to_group_lists.py`.
 
 #### Grouped counts in matrix formats
 
-By default, IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
+By default, Spl-IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
 larger matrices (e.g. for single-cell experiments) will be saved to MTX.
 Check [`--counts_format` option](cmd.md#specific-output-options) for details.
 Linear counts can also be converted to any other format using the script described below.
@@ -94,10 +94,10 @@ The script accepts the following arguments:
     Output prefix name;
 
 `--input` or `-i`
-    Path to counts files in linear IsoQuant format;
+    Path to counts files in linear Spl-IsoQuant format;
 
 `--genedb` or `-g`
-    Gene annotation in gffutils `.db` format (can be found in IsoQuant log), feature names will be used instead of IDs if provided; works only for genes and transcripts;
+    Gene annotation in gffutils `.db` format (can be found in Spl-IsoQuant log), feature names will be used instead of IDs if provided; works only for genes and transcripts;
 
 `--feature_type {gene,transcript,exon,intron}`
     Feature type to be converted [gene, transcript, exon, intron]; annotation lookup applies only to genes/transcripts;
@@ -122,7 +122,7 @@ If multiple experiments are provided, aggregated expression matrices will be pla
 
 #### PolyA / TSS site prediction
 
-Whenever a gene annotation is provided, IsoQuant predicts known and novel polyA sites:
+Whenever a gene annotation is provided, Spl-IsoQuant predicts known and novel polyA sites:
 
 * `SAMPLE_ID.polyA_prediction.tsv` - predicted polyA sites per reference transcript.
 
@@ -162,7 +162,7 @@ If `--read_group` is set, the per-group counts will be also computed:
 
 Similarly to the reference-based counts, these counts are converted to other formats as described [above](#grouped-counts-in-matrix-formats).
 
-If `--sqanti_output` is set, IsoQuant will produce output in [SQANTI](https://github.com/ConesaLab/SQANTI3)-like format:
+If `--sqanti_output` is set, Spl-IsoQuant will produce output in [SQANTI](https://github.com/ConesaLab/SQANTI3)-like format:
 
 * `SAMPLE_ID.novel_vs_known.SQANTI-like.tsv` - discovered novel transcripts vs reference transcripts (similar, but not identical to SQANTI `classification.txt`);
 
@@ -180,12 +180,12 @@ See [output formats](formats.md#fusion-prediction-format) for a description of t
 
 ## Output for single-cell and spatial modes
 
-By default, in single-cell and spatial modes IsoQuant only performs quantification analysis.
+By default, in single-cell and spatial modes Spl-IsoQuant only performs quantification analysis.
 
 UMI-filtered reads will be saved to the same [read_info format](#read-assignments). 
 All counts formats will also be identical (see above).
 
-If IsoQuant detects the barcodes, barcoded reads will be saved in [TSV format](barcode_calling.md#output).
+If Spl-IsoQuant detects the barcodes, barcoded reads will be saved in [TSV format](barcode_calling.md#output).
 If barcode calling also splits the reads into individual cDNAs, a FASTA file with cDNAs will be produced.
 
 Note that transcript discovery is performed only in `bulk` mode by default.

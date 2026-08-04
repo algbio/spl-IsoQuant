@@ -2,8 +2,8 @@ name: Barcode Mouse 10x Full Whitelist
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 2 * * 6'
+#  schedule:
+#  - cron: '0 2 * * 6'
 
 env:
   LAUNCHER: ${{github.workspace}}/isoquant_tests/github/run_barcode_test.py

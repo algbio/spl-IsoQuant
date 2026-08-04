@@ -2,8 +2,8 @@ name: SIRVs simulated perfect polyA (discovery)
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 9 * * 2'
+#  schedule:
+#  - cron: '0 9 * * 2'
 
 env:
   RUN_NAME: SIRVs.simulated_perfect_polya
@@ -52,7 +52,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'
@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'IsoQuant discovery'
+      - name: 'Spl-IsoQuant discovery'
         if: always()
         shell: bash
         env:

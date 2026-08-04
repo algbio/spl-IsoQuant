@@ -1,13 +1,13 @@
-IsoQuant: A universal toolkit for upstream processing of long RNA reads
+Spl-IsoQuant: A universal toolkit for upstream processing of long RNA reads
 Copyright (c) 2022-2026 University of Helsinki
 Copyright (c) 2020-2022 Saint Petersburg State University
 
 
-IsoQuant is free software; you can redistribute it and/or modify
+Spl-IsoQuant is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License, Version 2,
 dated June 1991, as published by the Free Software Foundation.
 
-IsoQuant is distributed in the hope that it will be useful, but
+Spl-IsoQuant is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 General Public License for more details.
@@ -18,7 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 -------------------------------------------------------------------------------
 
-IsoQuant
+Spl-IsoQuant
 A universal toolkit for upstream processing of long RNA reads
 Version: see VERSION
 
@@ -53,7 +53,7 @@ Also contributed:
 
 
 Installation instructions and manual can be found on the website:
-https://github.com/ablab/IsoQuant
+https://github.com/algbio/spl-IsoQuant
 
 Address for communication: 
 isoquant.rna@gmail.com

@@ -18,7 +18,7 @@ jobs:
   launch-runner:
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'

@@ -35,15 +35,15 @@ jobs:
 
       # --- Step 2: build the source archive ---
       - name: Build source archive
-        run: bash make-targz.sh        # -> IsoQuant-${VERSION}.tar.gz
+        run: bash make-targz.sh        # -> Spl-IsoQuant-${VERSION}.tar.gz
 
       # --- Step 3: unpack and smoke-test the shipped artifact ---
       - name: Unpack archive
-        run: tar -xzf "IsoQuant-${VERSION}.tar.gz"
+        run: tar -xzf "Spl-IsoQuant-${VERSION}.tar.gz"
 
-      - name: Smoke test (isoquant.py --test) on unpacked archive
-        working-directory: IsoQuant-${{ env.VERSION }}
-        run: python3 isoquant.py --test
+      - name: Smoke test (splisoquant.py --test) on unpacked archive
+        working-directory: Spl-IsoQuant-${{ env.VERSION }}
+        run: python3 splisoquant.py --test
 
       # --- Step 4: changelog notes + release draft ---
       - name: Extract latest changelog section
@@ -59,6 +59,6 @@ jobs:
           gh release create "$tag" \
             --draft \
             --target "${{ github.sha }}" \
-            --title "IsoQuant ${VERSION}" \
+            --title "Spl-IsoQuant ${VERSION}" \
             --notes-file release_notes.md \
-            "IsoQuant-${VERSION}.tar.gz"
+            "Spl-IsoQuant-${VERSION}.tar.gz"

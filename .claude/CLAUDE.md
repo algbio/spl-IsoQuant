@@ -54,12 +54,12 @@ pytest tests/console_test.py -v
 
 Basic test run with toy data:
 ```bash
-./isoquant.py --test
+./splisoquant.py --test
 ```
 
 Typical development run with simple test data:
 ```bash
-python isoquant.py \
+python splisoquant.py \
   --reference tests/simple_data/chr9.4M.fa.gz \
   --genedb tests/simple_data/chr9.4M.gtf.gz --complete_genedb \
   --fastq tests/simple_data/chr9.4M.ont.sim.fq.gz \
@@ -71,7 +71,7 @@ python isoquant.py \
 
 Run with pre-aligned BAM:
 ```bash
-python isoquant.py \
+python splisoquant.py \
   --reference tests/simple_data/chr9.4M.fa.gz \
   --genedb tests/simple_data/chr9.4M.gtf.gz \
   --bam tests/simple_data/chr9.4M.ont.sim.polya.bam \
@@ -95,7 +95,7 @@ External tools required (must be in PATH):
 
 ### Pipeline Flow
 
-Entry point: `isoquant.py` → `main()` → `run_pipeline()`
+Entry point: `splisoquant.py` → `main()` → `run_pipeline()`
 
 Pipeline stages execute sequentially:
 1. **Barcode Calling** (single-cell/spatial modes only) - `isoquant_lib/barcode_calling/detect_barcodes.py`
@@ -343,7 +343,7 @@ CI/CD workflows in `.github/workflows/`:
 
 See `.claude/BARCODE_CALLING.md` for barcode calling architecture (pipeline integration, barcode-spot grouping, barcode2barcode spot-level UMI dedup, barcoded_bam on-the-fly tag reading, universal barcode calling, MDF format, linked elements, result class hierarchy).
 
-See `.claude/ANALYSIS_OPTION.md` for the `--analysis` interface — the single option (values `quantification`/`quant`, `transcript_discovery`/`td`, `exon_quantification`/`ex_quant`, `fusion`) that selects pipeline stages, with context-aware defaults. It supersedes the now-hidden/deprecated `--count_exons`, `--count_intron_retentions`, `--fusion`, `--no_model_construction`, which still work. Resolution lives in `resolve_analyses()` (`isoquant.py`), producing internal flags `run_quantification` / `count_exons` / `count_intron_retentions` / `fusion` / `no_model_construction` / `predict_terminal_sites`.
+See `.claude/ANALYSIS_OPTION.md` for the `--analysis` interface — the single option (values `quantification`/`quant`, `transcript_discovery`/`td`, `exon_quantification`/`ex_quant`, `fusion`) that selects pipeline stages, with context-aware defaults. It supersedes the now-hidden/deprecated `--count_exons`, `--count_intron_retentions`, `--fusion`, `--no_model_construction`, which still work. Resolution lives in `resolve_analyses()` (`splisoquant.py`), producing internal flags `run_quantification` / `count_exons` / `count_intron_retentions` / `fusion` / `no_model_construction` / `predict_terminal_sites`.
 
 See `.claude/JOINT_EXON_COUNTS.md` for joint exon counts — region-based exon quantification that groups overlapping annotated exons into regions and emits N+1 features per region (N inclusion variants + 1 region-level exclusion). Runs alongside the classic `ExonCounter` when exon quantification is enabled (`--analysis exon_quantification`, aka the deprecated `--count_exons`).
 

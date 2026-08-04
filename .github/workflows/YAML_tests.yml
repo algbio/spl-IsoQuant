@@ -2,8 +2,8 @@ name: YAML tests
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 6 * * 3,6'
+#  schedule:
+#  - cron: '0 6 * * 3,6'
 
 env:
   RUN_NAME: Resume_tests
@@ -20,7 +20,7 @@ jobs:
   launch-runner:
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'

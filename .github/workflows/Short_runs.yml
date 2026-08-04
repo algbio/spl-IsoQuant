@@ -3,9 +3,9 @@ name: Short runs
 on:
   workflow_dispatch:
   push:
-    branches: [ "master", "sc_*" ]
+    branches: [ "main", "sc_*" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 env:
   RUN_NAME: Human.ONT_simulated.R9.uniform_cov
@@ -22,7 +22,7 @@ jobs:
   integration-tests:
     runs-on:
       labels: [isoquant]
-    name: 'IsoQuant toy dataset runs'
+    name: 'Spl-IsoQuant toy dataset runs'
 
     steps:
       - name: 'Cleanup'

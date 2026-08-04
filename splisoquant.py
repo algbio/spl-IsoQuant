@@ -7,7 +7,7 @@
 # See file LICENSE for details.
 ############################################################################
 # Cap per-process math-library thread pools to 1 BEFORE importing numpy /
-# scipy / xgboost (OpenBLAS/OpenMP read these at import time). IsoQuant already
+# scipy / xgboost (OpenBLAS/OpenMP read these at import time). Spl-IsoQuant already
 # parallelizes at the chromosome/process level, so letting each forked worker
 # spin up an all-cores BLAS/OpenMP team only oversubscribes the CPU: massive
 # cpu_time inflation (idle OpenMP spin-wait) with no wall-clock gain.
@@ -104,7 +104,7 @@ def parse_args(cmd_args=None, namespace=None):
 
     parser.add_argument("--full_help", action='help', help="show full list of options")
 
-    parser.add_argument("--test", action=TestMode, nargs=0, help="run IsoQuant on toy dataset")
+    parser.add_argument("--test", action=TestMode, nargs=0, help="run Spl-IsoQuant on toy Stereo-seq dataset")
 
     add_hidden_option('--debug', action='store_true', default=False,
                       help='debug log output.')
@@ -285,7 +285,7 @@ def parse_args(cmd_args=None, namespace=None):
 
     # SC ARGUMENTS
     add_option_to_group(sc_args_group, "--mode", "-m", type=str, choices=ISOQUANT_MODES,
-                                   help="IsoQuant mode [%s]" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
+                                   help="Spl-IsoQuant mode [%s]" % IsoQuantMode.bulk.name, default=IsoQuantMode.bulk.name)
     add_option_to_group(sc_args_group, '--barcode_whitelist', type=str, nargs='+',
                                    help='file(s) with barcode whitelist(s) for barcode calling')
     add_option_to_group(sc_args_group, "--barcoded_reads", type=str, nargs='+',
@@ -365,14 +365,14 @@ def parse_args(cmd_args=None, namespace=None):
     add_hidden_option("--cage-shift", type=int, default=50, help="interval before read start to look for CAGE peak")
 
     # PolyA / TSS training-data collection (developer-only).
-    # When either flag is given to a normal IsoQuant run, the matching
+    # When either flag is given to a normal Spl-IsoQuant run, the matching
     # terminal-position counter switches from inference to dumping per-peak
     # features (the eight FEATURE_COLUMNS plus `chromosome` and a `true_peak`
     # 0/1 label computed against the annotated transcript end) to the CSV
     # path supplied as the flag value. The XGBoost model is not consulted;
     # rows are accumulated, not filtered. Feed the CSV to
     # `misc/train_polya_tss_model.py` to fit a fresh model.
-    #   python isoquant.py … --genedb GENEDB --collect_polya_training peaks.csv
+    #   python splisoquant.py … --genedb GENEDB --collect_polya_training peaks.csv
     #   python misc/train_polya_tss_model.py --features peaks.csv \
     #       --output isoquant_lib/data/model_polya.json
     # For TSS, add --fl_data and --collect_tss_training tss_peaks.csv.
@@ -390,11 +390,11 @@ def parse_args(cmd_args=None, namespace=None):
     except FileNotFoundError:
         try:
             from importlib.metadata import version as _get_version
-            isoquant_version = _get_version("isoquant")
+            isoquant_version = _get_version("spl-isoquant")
         except Exception:
             pass
-    parser.add_argument('--version', '-v', action='version', version='IsoQuant ' + isoquant_version,
-                        help="show IsoQuant version and exit")
+    parser.add_argument('--version', '-v', action='version', version='Spl-IsoQuant ' + isoquant_version,
+                        help="show Spl-IsoQuant version and exit")
 
     args = parser.parse_args(cmd_args, namespace)
 
@@ -935,7 +935,7 @@ def set_logger(args):
     with open(log_file, "w") as f:
         f.write("Command line: " + args._cmd_line + '\n')
     setup_worker_logging(log_file, output_level)
-    logger.info("Running IsoQuant version " + args._version)
+    logger.info("Running Spl-IsoQuant version " + args._version)
 
 
 def set_data_dependent_options(args):
@@ -1277,8 +1277,8 @@ def call_barcodes(args):
                                          molecule=getattr(args, 'molecule', None))
             # Launching barcode calling in a separate process has the following reason:
             # Read chunks are not cleared by the GC in the end of barcode calling, leaving the main
-            # IsoQuant process to consume ~2,5 GB even when barcode calling is done.
-            # Once 16 child processes are created later, IsoQuant instantly takes threads x 2,5 GB for nothing.
+            # Spl-IsoQuant process to consume ~2,5 GB even when barcode calling is done.
+            # Once 16 child processes are created later, Spl-IsoQuant instantly takes threads x 2,5 GB for nothing.
             log_file, log_level = _get_log_params()
             with ProcessPoolExecutor(max_workers=1,
                                      initializer=setup_worker_logging,
@@ -1306,7 +1306,7 @@ def call_barcodes(args):
 
 
 def run_pipeline(args):
-    logger.info(" === IsoQuant pipeline started === ")
+    logger.info(" === Spl-IsoQuant pipeline started === ")
     logger.info("Python version: %s" % sys.version)
     logger.info("gffutils version: %s" % gffutils.__version__)
     logger.info("pysam version: %s" % pysam.__version__)
@@ -1363,13 +1363,13 @@ def run_pipeline(args):
                 logger.warning("Fusion detection encountered an error and was skipped: %s" % str(e))
                 logger.debug("Traceback:", exc_info=True)
 
-    logger.info(" === IsoQuant pipeline finished === ")
+    logger.info(" === Spl-IsoQuant pipeline finished === ")
 
 
 # Test mode is triggered by --test option
 class TestMode(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        self.out_dir = 'isoquant_test'
+        self.out_dir = 'splisoquant_test'
         if os.path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
         source_dir = os.path.dirname(os.path.realpath(__file__))
@@ -1381,13 +1381,14 @@ class TestMode(argparse.Action):
         if not os.path.isdir(test_data_dir):
             sys.stderr.write("ERROR: Test data not found. Cannot run in test mode.\n")
             sys.exit(1)
-        options = ['--output', self.out_dir, '--threads', '2',
-                   '--fastq', os.path.join(test_data_dir, 'chr9.4M.ont.sim.fq.gz'),
-                   '--reference', os.path.join(test_data_dir, 'chr9.4M.fa.gz'),
-                   '--genedb', os.path.join(test_data_dir, 'chr9.4M.gtf.gz'),
+        options = ['--output', self.out_dir, '--threads', '2', '--mode', 'stereoseq_nosplit',
+                   '--fastq', os.path.join(test_data_dir, 'S1.4K.subsample.fq.gz'),
+                   '--barcode_whitelist', os.path.join(test_data_dir, 'barcodes.tsv'),
+                   '--reference', os.path.join(test_data_dir, 'GRCm39.chrX.7.fa.gz'),
+                   '--genedb', os.path.join(test_data_dir, 'gencode.chrX.ENSMUSG00000031153.gtf'),
                    '--clean_start', '--data_type', 'nanopore', '--complete_genedb', '--force', '-p', 'TEST_DATA']
         print('=== Running in test mode === ')
-        print("Running IsoQuant in test mode with the following options:")
+        print("Running Spl-IsoQuant in test mode with the following options:")
         print(' '.join(options))
         print('Any other option is ignored ')
         main(options)
@@ -1402,7 +1403,8 @@ class TestMode(argparse.Action):
         with open(os.path.join(self.out_dir, 'isoquant.log'), 'r') as f:
             log = f.read()
 
-        correct_results = ['total assignments 4', 'polyA tail detected in 2', 'unique: 1', 'known: 2', 'Processed 1 experiment']
+        correct_results = ['Barcode detected: 254', 'Reliable UMI: 226', 'Spliced reads saved: 19',
+                           'Processed 1 experiment']
         return all([result in log for result in correct_results])
 
 
@@ -1441,13 +1443,13 @@ def main_entry():
             print_exc(file=strout)
             s = strout.getvalue()
             if s:
-                logger.critical("IsoQuant failed with the following error, please, submit this issue to "
-                                "https://github.com/ablab/IsoQuant/issues\n" + s)
+                logger.critical("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                                "https://github.com/algbio/spl-IsoQuant/issues\n" + s)
             else:
                 print_exc()
         else:
-            sys.stderr.write("IsoQuant failed with the following error, please, submit this issue to "
-                             "https://github.com/ablab/IsoQuant/issues\n")
+            sys.stderr.write("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                             "https://github.com/algbio/spl-IsoQuant/issues\n")
             print_exc()
         sys.exit(IsoQuantExitCode.UNCAUGHT_EXCEPTION)
 
@@ -1466,12 +1468,12 @@ if __name__ == "__main__":
             print_exc(file=strout)
             s = strout.getvalue()
             if s:
-                logger.critical("IsoQuant failed with the following error, please, submit this issue to "
-                                "https://github.com/ablab/IsoQuant/issues\n" + s)
+                logger.critical("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                                "https://github.com/algbio/spl-IsoQuant/issues\n" + s)
             else:
                 print_exc()
         else:
-            sys.stderr.write("IsoQuant failed with the following error, please, submit this issue to "
-                             "https://github.com/ablab/IsoQuant/issues\n")
+            sys.stderr.write("Spl-IsoQuant failed with the following error, please, submit this issue to "
+                             "https://github.com/algbio/spl-IsoQuant/issues\n")
             print_exc()
         sys.exit(IsoQuantExitCode.UNCAUGHT_EXCEPTION)

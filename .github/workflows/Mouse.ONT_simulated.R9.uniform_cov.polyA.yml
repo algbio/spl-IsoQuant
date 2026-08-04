@@ -2,8 +2,8 @@ name: Mouse ONT R9 simulated uniform coverage polyA
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 6 * * 5'
+#  schedule:
+#  - cron: '0 6 * * 5'
 
 env:
   RUN_NAME: Mouse.ONT_simulated.R9.uniform_cov.polyA
@@ -52,7 +52,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'
@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'IsoQuant'
+      - name: 'Spl-IsoQuant'
         if: always()
         shell: bash
         env:

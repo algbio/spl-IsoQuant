@@ -1,6 +1,6 @@
 # Barcode calling
 
-IsoQuant includes a built-in barcode calling module (`isoquant_detect_barcodes.py`) that can be used as
+Spl-IsoQuant includes a built-in barcode calling module (`splisoquant_detect_barcodes.py`) that can be used as
 a standalone tool. It extracts barcodes and UMIs from raw long reads and supports multiple single-cell and
 spatial protocols.
 
@@ -23,9 +23,9 @@ Each read is assigned:
 - A **strand** orientation (`+`, `-`, or `.` if unknown)
 - Protocol-specific features (polyT position, linker positions, etc.)
 
-## Integration with IsoQuant
+## Integration with Spl-IsoQuant
 
-When running IsoQuant in any single-cell or spatial mode (see [`--mode` option](cmd.md#single-cell-and-spatial-transcriptomics-options)), 
+When running Spl-IsoQuant in any single-cell or spatial mode (see [`--mode` option](cmd.md#single-cell-and-spatial-transcriptomics-options)), 
 barcode calling is performed automatically as the first pipeline step.
 The barcode detection output is a TSV file with one line per read, which is then used
 throughout the rest of the pipeline for grouping and UMI deduplication.
@@ -35,10 +35,10 @@ use `--barcoded_reads` or `--barcoded_bam` flag to skip the barcode calling step
 
 ## Standalone usage
 
-`isoquant_detect_barcodes.py` can be run independently:
+`splisoquant_detect_barcodes.py` can be run independently:
 
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   --input reads.fastq.gz \
   --barcodes barcode_whitelist.txt \
   --mode <mode> \
@@ -94,7 +94,7 @@ Folder for temporary files during parallel processing.
 
 10x Genomics:
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   -i reads.fastq.gz \
   -b 3M-february-2018.txt.gz \
   --mode tenX_v3 \
@@ -104,7 +104,7 @@ python isoquant_detect_barcodes.py \
 
 Stereo-seq:
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   -i reads.fastq.gz \
   -b stereo_barcodes.txt \
   --mode stereoseq \
@@ -114,7 +114,7 @@ python isoquant_detect_barcodes.py \
 
 Custom molecule:
 ```bash
-python isoquant_detect_barcodes.py \
+python splisoquant_detect_barcodes.py \
   -i reads.fastq.gz \
   --mode custom_sc \
   --molecule my_platform.mdf \

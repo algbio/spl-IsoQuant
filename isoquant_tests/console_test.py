@@ -13,14 +13,14 @@ import shutil
 
 
 def test_run_without_parameters():
-    result = subprocess.run(["python3", "isoquant.py"], capture_output=True)
+    result = subprocess.run(["python3", "splisoquant.py"], capture_output=True)
     assert result.returncode == 0
     assert b"usage" in result.stdout
 
 
 @pytest.mark.parametrize("option", ["-h", "--help", "--full_help"])
 def test__help(option):
-    result = subprocess.run(["./isoquant.py", option], capture_output=True)
+    result = subprocess.run(["./splisoquant.py", option], capture_output=True)
     print(result.returncode)
     assert result.returncode == 0
     assert b"usage" in result.stdout
@@ -34,7 +34,7 @@ def test_clean_start():
     shutil.rmtree(out_dir, ignore_errors=True)
     sample_name = "ONT_Simulated.chr9.4M"
 
-    result = subprocess.run(["python3", "isoquant.py",
+    result = subprocess.run(["python3", "splisoquant.py",
                              "--clean_start",
                              "-o", out_dir,
                              "--data_type", "nanopore",
@@ -74,7 +74,7 @@ def test_usual_start():
     shutil.rmtree(out_dir, ignore_errors=True)
     sample_name = "ONT_Simulated.chr9.4M"
     result = subprocess.run(["python3", "--version"])
-    result = subprocess.run(["python3", "isoquant.py",
+    result = subprocess.run(["python3", "splisoquant.py",
                              "-o", out_dir,
                              "--data_type", "nanopore",
                              "--fastq", data_dir + "chr9.4M.ont.sim.fq.gz",
@@ -99,7 +99,7 @@ def test_with_bam_and_polya():
     shutil.rmtree(out_dir, ignore_errors=True)
     sample_name = "ONT_Simulated.chr9.4M.polyA"
 
-    result = subprocess.run(["python3", "isoquant.py",
+    result = subprocess.run(["python3", "splisoquant.py",
                              "-o", out_dir,
                              "--data_type", "nanopore",
                              "--bam", os.path.join(data_dir, "chr9.4M.ont.sim.polya.bam"),
@@ -136,7 +136,7 @@ def test_with_bam_polya_and_fl_data():
     shutil.rmtree(out_dir, ignore_errors=True)
     sample_name = "ONT_Simulated.chr9.4M.polyA.fl"
 
-    result = subprocess.run(["python3", "isoquant.py",
+    result = subprocess.run(["python3", "splisoquant.py",
                              "-o", out_dir,
                              "--data_type", "nanopore",
                              "--bam", os.path.join(data_dir, "chr9.4M.ont.sim.polya.bam"),
@@ -165,7 +165,7 @@ def test_with_illumina():
     shutil.rmtree(out_dir, ignore_errors=True)
     sample_name = "ONT_Simulated.chr9.4M.polyA"
 
-    result = subprocess.run(["python3", "isoquant.py",
+    result = subprocess.run(["python3", "splisoquant.py",
                              "-o", out_dir,
                              "--data_type", "nanopore",
                              "--bam", os.path.join(data_dir, "chr9.4M.ont.sim.polya.bam"),
@@ -193,7 +193,7 @@ def test_with_yaml():
     shutil.rmtree(out_dir, ignore_errors=True)
     sample_name = "ONT_Simulated.chr9.4M.polyA"
 
-    result = subprocess.run(["python3", "isoquant.py",
+    result = subprocess.run(["python3", "splisoquant.py",
                              "-o", out_dir,
                              "--data_type", "nanopore",
                              "--yaml", os.path.join(data_dir, "chr9.4M.yaml"),
@@ -220,7 +220,7 @@ def test_with_yaml():
 #    os.environ['HOME'] = source_dir # dirty hack to set $HOME for tox environment
 #    sample_name = "MAPT.Mouse.ONT"
 #
-#    result = subprocess.run(["python", "isoquant.py", '--clean_start',
+#    result = subprocess.run(["python", "splisoquant.py", '--clean_start',
 #                             "-o", out_dir,
 #                             "--data_type", "nanopore",
 #                             "--fastq", data_dir + "MAPT.Mouse.ONT.simulated.fastq",

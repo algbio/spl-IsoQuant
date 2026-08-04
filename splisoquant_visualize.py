@@ -15,9 +15,9 @@ class FindGenesAction(argparse.Action):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Visualize your IsoQuant output.")
+    parser = argparse.ArgumentParser(description="Visualize your Spl-IsoQuant output.")
     parser.add_argument(
-        "output_directory", type=str, help="Directory containing IsoQuant output files."
+        "output_directory", type=str, help="Directory containing Spl-IsoQuant output files."
     )
     parser.add_argument(
         "--viz_output",
@@ -28,7 +28,7 @@ def parse_arguments():
     parser.add_argument(
         "--gtf",
         type=str,
-        help="Optional path to a GTF file if unable to be extracted from IsoQuant log",
+        help="Optional path to a GTF file if unable to be extracted from Spl-IsoQuant log",
         default=None,
     )
     parser.add_argument(

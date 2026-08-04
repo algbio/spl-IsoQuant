@@ -2,8 +2,8 @@ name: Human ONT R10 simulated TSS (discovery + prediction)
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 5 * * 2'
+#  schedule:
+#  - cron: '0 5 * * 2'
 
 env:
   RUN_NAME: Human.ONT_simulated.TSS
@@ -52,7 +52,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'
@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'IsoQuant discovery + TSS'
+      - name: 'Spl-IsoQuant discovery + TSS'
         if: always()
         shell: bash
         env:

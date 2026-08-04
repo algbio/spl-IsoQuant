@@ -1,4 +1,4 @@
-# IsoQuant command line options
+# Spl-IsoQuant command line options
 
 
 ## Basic options
@@ -15,10 +15,10 @@ the reference annotation database.
     Prints all available options (including hidden ones).
 
 `--test`
-    Runs IsoQuant on the toy data set.   
+    Runs Spl-IsoQuant on the toy data set.   
 
 `--version`
-    Print IsoQuant version and exit.
+    Print Spl-IsoQuant version and exit.
 
 ## Input options
 
@@ -113,7 +113,7 @@ Input file names are used as labels if not set.
 
    * `file_name` - groups reads by their original file names (or file name labels) within an experiment.
 This option makes sense when multiple files are provided.
-If multiple BAM/FASTQ files are provided, IsoQuant will add `--read_group file_name` automatically.
+If multiple BAM/FASTQ files are provided, Spl-IsoQuant will add `--read_group file_name` automatically.
 
    * `tag:TAG` - groups reads by BAM file read tag, where `TAG` is the tag name
 (e.g. `tag:RG` uses `RG` tag values as groups, commonly used for read group information).
@@ -129,12 +129,12 @@ where `FILE` is the file path, `READ_COL` is column with read ids (default: 0),
 
    * `barcode_spot` - group by barcode properties, such as spots/cell types.
 Set barcode-to-spot mapping via `--barcode2spot` option.
-IsoQuant will add `--read_group barcode_spot` automatically if `--barcode2spot` is set.
+Spl-IsoQuant will add `--read_group barcode_spot` automatically if `--barcode2spot` is set.
 Useful for grouping single-cell/spatial data by cell type or spatial region instead of individual barcodes.
 
    * `barcode_barcode` - group by spot-level barcode mapping for UMI deduplication.
 Set barcode-to-spot mapping via `--barcode2barcode` option.
-IsoQuant will add `--read_group barcode_barcode` automatically if `--barcode2barcode` is set.
+Spl-IsoQuant will add `--read_group barcode_barcode` automatically if `--barcode2barcode` is set.
 Multiple barcodes mapping to the same spot are grouped together.
 
    * `barcode` - groups reads by cell barcode.
@@ -144,12 +144,12 @@ Multiple barcodes mapping to the same spot are grouped together.
    grouping (`barcode`, `barcode_spot`, or `barcode_barcode`) is specified.
 
    * `no_auto` - disable automatic read grouping.
-   By default, IsoQuant automatically adds grouping in certain cases
+   By default, Spl-IsoQuant automatically adds grouping in certain cases
    (e.g. `file_name` for multiple files, `barcode` for single-cell/spatial modes).
    This option will enforce only explicitly stated grouping rules. 
 
    * `none` - disable read grouping completely (not compatible with other options).
-   By default, IsoQuant automatically adds grouping in certain cases
+   By default, Spl-IsoQuant automatically adds grouping in certain cases
    (e.g. `file_name` for multiple files, `barcode` for single-cell/spatial modes).
    Use `--read_group none` to suppress read grouping and produce only bulk counts.
 
@@ -185,10 +185,10 @@ Example usage:
 ```bash
 # Generate read_info (default) plus legacy read_assignments
 # Generate all large output files
-isoquant.py --large_output read_info read_assignments corrected_bed read2transcripts allinfo ...
+splisoquant.py --large_output read_info read_assignments corrected_bed read2transcripts allinfo ...
 
 # Disable all large output files
-isoquant.py --large_output none ...
+splisoquant.py --large_output none ...
 ```
 
 The `read_info.tsv` format can be also converted to old formats using the conversion script:
@@ -238,7 +238,7 @@ Feeding you data as pseudo-bulk (`--mode bulk`) is recommended for full transcri
 `--resume`
     Resume a previously unfinished run. The output folder with the previous run must be specified.
     Allowed options are `--threads`, `--debug`, `--high_memory`; other options cannot be changed.
-    IsoQuant will run from the beginning if the output folder does not contain the previous run.
+    Spl-IsoQuant will run from the beginning if the output folder does not contain the previous run.
 
 `--force`
     Force to overwrite the folder with previous run.
@@ -266,7 +266,7 @@ supported protocols, examples, molecule description format, and UMI deduplicatio
 
 `--mode` or `-m`
 
-IsoQuant mode for processing single-cell or spatial transcriptomics data. Available modes:
+Spl-IsoQuant mode for processing single-cell or spatial transcriptomics data. Available modes:
 
 * `bulk` - standard bulk RNA-seq mode (default)
 * `tenX_v3` - 10x Genomics single-cell 3' gene expression
@@ -294,16 +294,16 @@ Supports plain text and gzipped files.
 _Notes:_
 - Barcode calling is performed much better if the whitelist contains a small number of barcodes. 
 If you have a subset of barcodes, for example, from short-read data, provide them instead of the full whitelist;
-- IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
+- Spl-IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
 
 `--barcoded_reads`
 
 Path to TSV file(s) with pre-called barcoded reads.
 Format: `read_id<TAB>barcode<TAB>umi` (one read per line).
-If provided, IsoQuant skips barcode calling and uses these assignments directly.
+If provided, Spl-IsoQuant skips barcode calling and uses these assignments directly.
 More than 3 columns are allowed, but only the first 3 will be used.
 
-Note that IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
+Note that Spl-IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
 
 
 `--barcoded_bam`
@@ -313,7 +313,7 @@ Uses `CB` (cell barcode) and `UB` (UMI) tags by default (standard 10x Genomics /
 Mutually exclusive with `--barcode_whitelist` and `--barcoded_reads`.
 This option is a flag, not a way to provide the file (use `--bam` to set the input BAM).
 
-Note that IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
+Note that Spl-IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
 
 `--barcode_tag`
 BAM tag for cell barcode (default: CB), requires `--barcoded_bam` flag.
@@ -475,7 +475,7 @@ We recommend _not_ to modify these options unless you are clearly aware of their
     Do not use previously generated gene database, genome indices, or BAM files, run the pipeline from the very beginning (will take more time).
 
 `--run_aligner_only`
-    Align reads to the reference without running IsoQuant itself.
+    Align reads to the reference without running Spl-IsoQuant itself.
 
 `--genedb_output`
     If your output folder is located on a shared storage (e.g. NFS share), use this option to set another path
@@ -545,7 +545,7 @@ Experiments with simulated data show that this method could give more accurate e
 However, the normalization method does not affect correlation/relative proportions.
 
 `--counts_format`
-    By default, IsoQuant outputs counts in internal linear format (see [formats](formats.md#linear-format) and [output](output.md#grouped-counts-in-linear-format)).
+    By default, Spl-IsoQuant outputs counts in internal linear format (see [formats](formats.md#linear-format) and [output](output.md#grouped-counts-in-linear-format)).
     Use this option to convert grouped counts to other format(s). You can provide a list with the following values:
 
 * `matrix` - standard explicit TSV matrix format with genes as rows and groups as columns;
@@ -554,7 +554,7 @@ However, the normalization method does not affect correlation/relative proportio
 larger matrices (e.g. for single-cell experiments) will be saved to MTX (default).
 * `none` - no convertion.
 
-Note that grouped counts can be converted to any format using `{IsoQuant installation folder}/isoquant_lib/quantification/convert_grouped_counts.py`.
+Note that grouped counts can be converted to any format using `{Spl-IsoQuant installation folder}/isoquant_lib/quantification/convert_grouped_counts.py`.
 See more information [here](output.md#grouped-counts-in-linear-format).
 
 `--old_exon_count_format`
