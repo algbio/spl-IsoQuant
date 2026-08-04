@@ -54,12 +54,12 @@ pytest tests/console_test.py -v
 
 Basic test run with toy data:
 ```bash
-./isoquant.py --test
+./splisoquant.py --test
 ```
 
 Typical development run with simple test data:
 ```bash
-python isoquant.py \
+python splisoquant.py \
   --reference tests/simple_data/chr9.4M.fa.gz \
   --genedb tests/simple_data/chr9.4M.gtf.gz --complete_genedb \
   --fastq tests/simple_data/chr9.4M.ont.sim.fq.gz \
@@ -71,7 +71,7 @@ python isoquant.py \
 
 Run with pre-aligned BAM:
 ```bash
-python isoquant.py \
+python splisoquant.py \
   --reference tests/simple_data/chr9.4M.fa.gz \
   --genedb tests/simple_data/chr9.4M.gtf.gz \
   --bam tests/simple_data/chr9.4M.ont.sim.polya.bam \
@@ -95,7 +95,7 @@ External tools required (must be in PATH):
 
 ### Pipeline Flow
 
-Entry point: `isoquant.py` → `main()` → `run_pipeline()`
+Entry point: `splisoquant.py` → `main()` → `run_pipeline()`
 
 Pipeline stages execute sequentially:
 1. **Barcode Calling** (single-cell/spatial modes only) - `isoquant_lib/barcode_calling/detect_barcodes.py`
@@ -260,7 +260,7 @@ IsoQuant can use short Illumina reads (`--illumina_bam`) to correct long-read ex
 - Tool expects reads to contain polyA tails
 - Don't trim polyA tails for better transcript model construction
 - PolyA verification integrated into assignment process
-- `--polya_trimmed tag:<TAG>|list:<FILE>|flnc:<FILE>` take polyA status from Dorado (`pt` tag) / a read list / `isoseq refine` report (`isoquant_lib/terminal_prediction/external_polya.py`). Sequence detection still runs; **the external source wins on conflicts** (`reconcile_polya`, applied before `PolyAFixer` so contradicted tails do not trim exons). Known side (`TS:A`, else `--stranded forward/reverse` for `tag:`; list col 2; flnc `strand` column) → injected before assignment; unknown side → after, by assigned strand. Only flnc `polyAlen`=0 clears tails. list/flnc tables are split per chromosome like barcode tables. IsoQuant's own minimap2 step keeps read tags **regardless of the option** (`isoquant_lib/utils/read_tags.py`): unaligned BAM → `samtools fastq -T <tags>`, FASTA/FASTQ whose header comments are all SAM tags (first 1000 reads) → `samtools import -T | samtools fastq/fasta -T`, both + minimap2 `-y`; minimap2's own tags (Dorado `ts:i` clashes with minimap2 `ts:A`) and `RG`/`PG` are dropped. `warn_about_missing_polya_tag` (`isoquant.py`) warns when `tag:X` is set but no checked primary alignment carries X.
+- `--polya_trimmed tag:<TAG>|list:<FILE>|flnc:<FILE>` take polyA status from Dorado (`pt` tag) / a read list / `isoseq refine` report (`isoquant_lib/terminal_prediction/external_polya.py`). Sequence detection still runs; **the external source wins on conflicts** (`reconcile_polya`, applied before `PolyAFixer` so contradicted tails do not trim exons). Known side (`TS:A`, else `--stranded forward/reverse` for `tag:`; list col 2; flnc `strand` column) → injected before assignment; unknown side → after, by assigned strand. Only flnc `polyAlen`=0 clears tails. list/flnc tables are split per chromosome like barcode tables. IsoQuant's own minimap2 step keeps read tags **regardless of the option** (`isoquant_lib/utils/read_tags.py`): unaligned BAM → `samtools fastq -T <tags>`, FASTA/FASTQ whose header comments are all SAM tags (first 1000 reads) → `samtools import -T | samtools fastq/fasta -T`, both + minimap2 `-y`; minimap2's own tags (Dorado `ts:i` clashes with minimap2 `ts:A`) and `RG`/`PG` are dropped. `warn_about_missing_polya_tag` (`splisoquant.py`) warns when `tag:X` is set but no checked primary alignment carries X.
 
 ## Testing Strategy
 
@@ -347,11 +347,11 @@ See `.claude/RESUME_CHECKPOINTS.md` for `--resume` (branch `resume_checkpoints`)
 
 See `.claude/BARCODE_CALLING.md` for barcode calling architecture (pipeline integration, barcode-spot grouping, barcode2barcode spot-level UMI dedup, barcoded_bam on-the-fly tag reading, universal barcode calling, MDF format, linked elements, result class hierarchy).
 
-See `.claude/CELL_BARCODE_SELECTION.md` for cell barcode detection (branch `badger`, counting and selection ported from https://github.com/algbio/Badger) — the answer to stock 10x whitelists, where `min_score == BARCODE_LEN_10X` makes per-read matching degenerate into exact matching. `--n_cells` decides what `--barcode_whitelist` means: unset it is the cell list (one pass, matched as today); set to a number or `auto` it is a pool, so a first pass extracts barcode windows verbatim (`TenXBarcodeDetector(whitelist_matching=False)`), the counts pick the cell barcodes, and a second ordinary pass matches reads against those. `--barcode_whitelist auto` detects without a pool at all. Measured on three real 10x datasets (ONT StereoQ, ONT cDNA R10.4, concat/split): identical to supplying the true cell list, +13 points of recall over taking the stock list at face value; `-b auto` is worse (R10.4 −5 precision) because counts alone cannot tell a cell from a recurring extraction artifact. Architecture: `CellBarcodeSelector` + `select_cell_barcodes` (`isoquant_lib/barcode_calling/cell_selection.py`), `detect_cell_barcodes` in `isoquant.py`, writing `aux/<prefix>.raw_barcodes_<i>.tsv` → `<prefix>.cell_barcodes.tsv` → `<prefix>.barcoded_reads_<i>.tsv`. `--barcode_correction` is a hidden override. Badger's edit-distance graph correction was implemented, measured against the existing SSW matcher (86.55 vs 87.35 recall given the same barcodes) and dropped: SSW slides to find a shifted window, a fixed-window edit distance cannot. Three gotchas documented there, all found by measurement: raw-mode strand selection must be structural (R1-to-polyT span) — worth 20 points of recall; `score_diff` never rejected anything because the runner-up was untracked and same-offset ties invisible; and `estimate_cell_number` reported a single cell on a flat count distribution.
+See `.claude/CELL_BARCODE_SELECTION.md` for cell barcode detection (branch `badger`, counting and selection ported from https://github.com/algbio/Badger) — the answer to stock 10x whitelists, where `min_score == BARCODE_LEN_10X` makes per-read matching degenerate into exact matching. `--n_cells` decides what `--barcode_whitelist` means: unset it is the cell list (one pass, matched as today); set to a number or `auto` it is a pool, so a first pass extracts barcode windows verbatim (`TenXBarcodeDetector(whitelist_matching=False)`), the counts pick the cell barcodes, and a second ordinary pass matches reads against those. `--barcode_whitelist auto` detects without a pool at all. Measured on three real 10x datasets (ONT StereoQ, ONT cDNA R10.4, concat/split): identical to supplying the true cell list, +13 points of recall over taking the stock list at face value; `-b auto` is worse (R10.4 −5 precision) because counts alone cannot tell a cell from a recurring extraction artifact. Architecture: `CellBarcodeSelector` + `select_cell_barcodes` (`isoquant_lib/barcode_calling/cell_selection.py`), `detect_cell_barcodes` in `splisoquant.py`, writing `aux/<prefix>.raw_barcodes_<i>.tsv` → `<prefix>.cell_barcodes.tsv` → `<prefix>.barcoded_reads_<i>.tsv`. `--barcode_correction` is a hidden override. Badger's edit-distance graph correction was implemented, measured against the existing SSW matcher (86.55 vs 87.35 recall given the same barcodes) and dropped: SSW slides to find a shifted window, a fixed-window edit distance cannot. Three gotchas documented there, all found by measurement: raw-mode strand selection must be structural (R1-to-polyT span) — worth 20 points of recall; `score_diff` never rejected anything because the runner-up was untracked and same-offset ties invisible; and `estimate_cell_number` reported a single cell on a flat count distribution.
 
 See `.claude/SC_IO_OUTPUTS.md` for the single-cell I/O outputs (branch `sc_outputs`) — the split-reads FASTA and the barcoded read tables are now gzipped unless `--no_gzip` (compression happens in the chunk workers and at end of run respectively, never on a path anything waits on), plus two optional BAM outputs: `--large_output tagged_bam` (`<prefix>.tagged.bam`, every input alignment with CB/UB, a pure side output) and `--large_output deduplicated_bam` (`<prefix>.deduplicated.bam`, primary-only UMI-survivor subset with CB/UB/GX/TX; deliberately **not** wired into fusion detection — UMI filtering removes the chimeric/inconsistent reads fusion calling depends on, so dedup for fusion belongs inside the fusion algorithm). Shared helpers in `isoquant_lib/utils/bam_utils.py`. Also records the `--split_molecules auto` regression fixed there: splitting with aligned (`--bam`) input produced a FASTA that was never re-aligned.
 
-See `.claude/ANALYSIS_OPTION.md` for the `--analysis` interface — the single option (values `quantification`/`quant`, `transcript_discovery`/`td`, `exon_quantification`/`ex_quant`, `fusion`) that selects pipeline stages, with context-aware defaults. It supersedes the now-hidden/deprecated `--count_exons`, `--count_intron_retentions`, `--fusion`, `--no_model_construction`, which still work. Resolution lives in `resolve_analyses()` (`isoquant.py`), producing internal flags `run_quantification` / `count_exons` / `count_intron_retentions` / `fusion` / `no_model_construction` / `predict_terminal_sites`.
+See `.claude/ANALYSIS_OPTION.md` for the `--analysis` interface — the single option (values `quantification`/`quant`, `transcript_discovery`/`td`, `exon_quantification`/`ex_quant`, `fusion`) that selects pipeline stages, with context-aware defaults. It supersedes the now-hidden/deprecated `--count_exons`, `--count_intron_retentions`, `--fusion`, `--no_model_construction`, which still work. Resolution lives in `resolve_analyses()` (`splisoquant.py`), producing internal flags `run_quantification` / `count_exons` / `count_intron_retentions` / `fusion` / `no_model_construction` / `predict_terminal_sites`.
 
 See `.claude/EXON_COUNTS.md` for exon counts (`exon_counts.tsv`) — per-exon usage via `ExonUsageCounter`: each annotated exon is independently classified per read as full / left / right inclusion, skip (exon inside a read intron, from a recomputed split-exon profile) or alt (overlapping read exon with other borders); include = full+left+right, exclude = skip, so PSI is per exon. Replaced the 4.0.0 region-based `JointExonCounter` (discussion #426). Runs with `ExonSpliceSiteCounter` when exon quantification is enabled (`--analysis exon_quantification`, aka the deprecated `--count_exons`).
 

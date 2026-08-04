@@ -2,8 +2,8 @@ name: SIRVs real ONT various options
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 21 * * 6'
+#  schedule:
+#  - cron: '0 21 * * 6'
 
 env:
   RUN_NAME: SIRVs.Set4.R10.OPTS
@@ -20,7 +20,7 @@ jobs:
   launch-runner:
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'
@@ -34,7 +34,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'IsoQuant SIRVs R10.4 pipeline options'
+      - name: 'Spl-IsoQuant SIRVs R10.4 pipeline options'
         if: always()
         shell: bash
         env:
@@ -43,7 +43,7 @@ jobs:
           export PATH=$PATH:${{env.BIN_PATH}}
           python3 ${{env.LAUNCHER}} ${{env.CFG_DIR}}/${{env.STEP_NAME}}.yaml -o ${{env.OUTPUT_BASE}}
 
-      - name: 'IsoQuant SIRVs R10.4 read filtering'
+      - name: 'Spl-IsoQuant SIRVs R10.4 read filtering'
         if: always()
         shell: bash
         env:
@@ -52,7 +52,7 @@ jobs:
           export PATH=$PATH:${{env.BIN_PATH}}
           python3 ${{env.LAUNCHER}} ${{env.CFG_DIR}}/${{env.STEP_NAME}}.yaml -o ${{env.OUTPUT_BASE}}
 
-      - name: 'IsoQuant SIRVs R10.4 strategies'
+      - name: 'Spl-IsoQuant SIRVs R10.4 strategies'
         if: always()
         shell: bash
         env:

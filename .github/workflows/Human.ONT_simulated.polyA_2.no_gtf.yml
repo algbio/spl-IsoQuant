@@ -2,8 +2,8 @@ name: Human ONT simulated polyA 2 no annotation
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 5 10,18 * *'
+#  schedule:
+#  - cron: '0 5 10,18 * *'
 
 env:
   RUN_NAME: Human.ONT_simulated.polyA_2.no_gtf
@@ -52,7 +52,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'
@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'IsoQuant de-novo discovery (no annotation)'
+      - name: 'Spl-IsoQuant de-novo discovery (no annotation)'
         if: always()
         shell: bash
         env:

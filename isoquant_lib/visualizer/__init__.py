@@ -5,4 +5,4 @@
 ############################################################################
 
 # Post-run visualization: output config, plotting, and gene-model ranking
-# used by isoquant_visualize.py.
+# used by splisoquant_visualize.py.

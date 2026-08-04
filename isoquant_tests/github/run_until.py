@@ -18,7 +18,7 @@ Used to produce partial IsoQuant runs for the --resume tests. The kill has to be
 
 Usage:
     run_until.py --stop "Finished processing chromosome" --after "Processing assigned reads" \\
-                 --occurrence 2 [--log run.log] -- python3 isoquant.py -o out ...
+                 --occurrence 2 [--log run.log] -- python3 splisoquant.py -o out ...
 
 Exit codes: 0 stopped as requested, 2 bad usage, 3 the command ended before the stop line.
 """

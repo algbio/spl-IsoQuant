@@ -23,7 +23,7 @@ from isoquant_lib.assignment.isoform_assignment import (
 from isoquant_lib.terminal_prediction.polya_finder import PolyAInfo
 from isoquant_lib.model_construction.transcript_to_gene_joiner import TranscriptToGeneJoiner
 from isoquant_lib.model_construction.context import ModelStore, ModelConstructionContext
-# Re-exported for isoquant.py's `from ...graph_based_model_construction import StrandnessReportingLevel`.
+# Re-exported for splisoquant.py's `from ...graph_based_model_construction import StrandnessReportingLevel`.
 from isoquant_lib.model_construction.context import StrandnessReportingLevel  # noqa: F401
 from isoquant_lib.model_construction.fl_graph_constructor import GraphBasedConstructor
 from isoquant_lib.model_construction.assignment_based_constructor import AssignmentBasedConstructor

@@ -2,8 +2,8 @@ name: SIRVs simulated R9
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 12 * * 4'
+#  schedule:
+#  - cron: '0 12 * * 4'
 
 env:
   RUN_NAME: SIRVs.simulated
@@ -20,7 +20,7 @@ jobs:
   launch-runner:
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'

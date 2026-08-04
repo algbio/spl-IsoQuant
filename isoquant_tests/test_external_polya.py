@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import isoquant
+import splisoquant
 from isoquant_lib.alignment.alignment_info import AlignmentInfo
 from isoquant_lib.alignment.alignment_processor import AlignmentCollector, PolyATrimmed
 from isoquant_lib.terminal_prediction.external_polya import (
@@ -55,34 +55,34 @@ class TestParsePolyATrimmed:
         ("stranded", PolyATrimmed.stranded),
     ])
     def test_plain_modes(self, value, expected):
-        assert isoquant.parse_polya_trimmed(value) == (expected, None, None)
+        assert splisoquant.parse_polya_trimmed(value) == (expected, None, None)
 
     def test_tag(self):
-        assert isoquant.parse_polya_trimmed("tag:pt") == (PolyATrimmed.tag, "pt", None)
+        assert splisoquant.parse_polya_trimmed("tag:pt") == (PolyATrimmed.tag, "pt", None)
 
     def test_list_is_made_absolute(self, tmp_path, monkeypatch):
         (tmp_path / "ids.txt").write_text("r1\n")
         monkeypatch.chdir(tmp_path)
-        mode, tag, file_name = isoquant.parse_polya_trimmed("list:ids.txt")
+        mode, tag, file_name = splisoquant.parse_polya_trimmed("list:ids.txt")
         assert (mode, tag, file_name) == (PolyATrimmed.list, None, str(tmp_path / "ids.txt"))
 
     def test_flnc(self, tmp_path):
         report = tmp_path / "flnc.report.csv"
         report.write_text(FLNC_HEADER)
-        assert isoquant.parse_polya_trimmed("flnc:" + str(report)) == (PolyATrimmed.flnc, None, str(report))
+        assert splisoquant.parse_polya_trimmed("flnc:" + str(report)) == (PolyATrimmed.flnc, None, str(report))
 
     @pytest.mark.parametrize("value", [
         "unknown", "tag", "tag:", "list:", "flnc:", "none:x", "stranded:x", "list:/nonexistent/ids.txt",
     ])
     def test_invalid(self, value):
         with pytest.raises(ValueError):
-            isoquant.parse_polya_trimmed(value)
+            splisoquant.parse_polya_trimmed(value)
 
     def test_flnc_with_wrong_header(self, tmp_path):
         report = tmp_path / "ids.txt"
         report.write_text("r1\nr2\n")
         with pytest.raises(ValueError):
-            isoquant.parse_polya_trimmed("flnc:" + str(report))
+            splisoquant.parse_polya_trimmed("flnc:" + str(report))
 
 
 class TestNormalization:

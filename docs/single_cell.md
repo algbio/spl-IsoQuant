@@ -1,7 +1,7 @@
 # Single-cell and spatial transcriptomics
 
-IsoQuant supports single-cell and spatial long-read data obtained using various protocols.
-When a single-cell or spatial mode is selected, IsoQuant automatically performs
+Spl-IsoQuant supports single-cell and spatial long-read data obtained using various protocols.
+When a single-cell or spatial mode is selected, Spl-IsoQuant automatically performs
 barcode calling and UMI-based PCR deduplication as part of the pipeline.
 
 ## Overview
@@ -9,7 +9,7 @@ barcode calling and UMI-based PCR deduplication as part of the pipeline.
 The single-cell/spatial pipeline extends the standard bulk pipeline with these additional steps:
 
 1. **Barcode calling** -- extract cell/spot barcodes and UMIs from raw reads;
-2. **Standard IsoQuant processing** -- alignment, read-to-isoform assignment;
+2. **Standard Spl-IsoQuant processing** -- alignment, read-to-isoform assignment;
 3. **UMI deduplication** -- remove PCR/RT duplicates;
 4. **Grouped quantification** -- produce per-cell/per-spot gene and transcript counts.
 
@@ -36,7 +36,7 @@ which can also be used as a standalone tool.
 
 10x Genomics single-cell:
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --fastq reads.fastq.gz --data_type nanopore \
   --mode tenX_v3 --barcode_whitelist barcodes.txt.gz \
   -o sc_output
@@ -44,7 +44,7 @@ isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 Stereo-seq spatial:
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --fastq reads.fastq.gz --data_type nanopore \
   --mode stereoseq --barcode_whitelist barcodes.txt \
   -o stereo_output
@@ -52,7 +52,7 @@ isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 Custom protocol with molecule definition file:
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --fastq reads.fastq.gz --data_type nanopore \
   --mode custom_sc --molecule molecule_definition.mdf \
   -o custom_output
@@ -60,7 +60,7 @@ isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 Pre-called barcodes (skip barcode calling):
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --bam aligned.bam --data_type nanopore \
   --mode tenX_v3 --barcoded_reads barcodes.tsv \
   -o sc_output
@@ -70,7 +70,7 @@ isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
 
 `--mode` or `-m`
 
-IsoQuant processing mode. Available modes:
+Spl-IsoQuant processing mode. Available modes:
 
 * `bulk` -- standard bulk RNA-seq mode (default)
 * `tenX_v3` -- 10x Genomics single-cell 3' gene expression
@@ -107,7 +107,7 @@ _Notes:_
 Without it the whitelist is taken to be the list of cell barcodes;
 - If you have a subset of barcodes from short-read data, providing them directly also works and
 skips the extra pass over the reads;
-- IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
+- Spl-IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
 Use `--read_group barcode` to group reads by barcode explicitly. In case of a large number of barcodes, it may take a lot of time. 
 
 The number of whitelist files depends on the mode:
@@ -136,11 +136,11 @@ cell barcodes from read counts).
 
 Path to TSV file(s) with pre-called barcoded reads.
 Format: `read_id<TAB>barcode<TAB>umi` (one read per line).
-If provided, IsoQuant skips barcode calling and uses these assignments directly.
+If provided, Spl-IsoQuant skips barcode calling and uses these assignments directly.
 More than 3 columns are allowed, but only the first 3 will be used.
 Mutually exclusive with `--barcode_whitelist` and `--barcoded_bam`.
 
-Note that IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
+Note that Spl-IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
 Use `--read_group barcode` to group reads by barcode explicitly. In case of a large number of barcodes, it may take a lot of time. 
 
 
@@ -151,7 +151,7 @@ Uses `CB` (cell barcode) and `UB` (UMI) tags by default.
 Mutually exclusive with `--barcode_whitelist` and `--barcoded_reads`.
 This option is a flag, not a way to provide the file (use `--bam` to set the input BAM).
 
-Note that IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
+Note that Spl-IsoQuant will perform per-barcode quantification automatically unless `--barcoded_reads` or  `--barcode2spot` are set.
 Use `--read_group barcode` to group reads by barcode explicitly. In case of a large number of barcodes, it may take a lot of time. 
 
 `--barcode_tag`
@@ -178,7 +178,7 @@ This will also turn off automatic per-barcode grouping (set `--read_group barcod
 
 Path to a molecule description format (MDF) file for `custom_sc` mode.
 This file defines the structure of the sequencing molecule (barcodes, UMIs, linkers, polyT, cDNA)
-and allows IsoQuant to process reads from any single-cell or spatial protocol.
+and allows Spl-IsoQuant to process reads from any single-cell or spatial protocol.
 See the [MDF format](#molecule-description-format-mdf) section below for details.
 
 `--barcode2barcode`
@@ -204,7 +204,7 @@ For Visium HD composite barcodes, use `isoquant_lib/scripts/prepare_visium_spot_
 ## Molecule description format (MDF)
 
 The MDF format allows users to describe the structure of their sequencing molecule
-so that IsoQuant can extract barcodes and UMIs from arbitrary protocol.
+so that Spl-IsoQuant can extract barcodes and UMIs from arbitrary protocol.
 The molecule is described in the 3' to 5' direction (primer end first, cDNA last).
 
 An MDF file has two parts:
@@ -311,7 +311,7 @@ calling against that much shorter list. Correction itself is unchanged — only 
 matched against differs.
 
 ```bash
-python isoquant.py --mode tenX_v3 \
+python splisoquant.py --mode tenX_v3 \
   --barcode_whitelist 3M-february-2018.txt.gz --n_cells auto \
   --fastq reads.fastq.gz --reference genome.fa --genedb genes.gtf \
   --data_type nanopore -o output_dir
@@ -331,7 +331,7 @@ barcodes were extracted, skipped and selected in `<prefix>.cell_barcodes.stats`.
 
 Oxford Nanopore long reads often contain 2 or more cDNA molecules ligated end to end during
 library preparation. Without splitting, only the first barcode is detected and the rest of the
-read is treated as a single cDNA. With splitting, IsoQuant detects every barcode/UMI pattern in
+read is treated as a single cDNA. With splitting, Spl-IsoQuant detects every barcode/UMI pattern in
 the read, cuts the read at molecule boundaries, and produces a new FASTA file with one record
 per cDNA molecule.
 
@@ -347,7 +347,7 @@ Supported for `tenX_v3`, `tenX_v2`, `stereoseq` and `visium_5prime`. `--split_mo
 with any other mode is an error rather than a silent no-op, so a request that cannot be
 honoured never passes unnoticed.
 
-When splitting, IsoQuant writes an additional output file (`*.split_reads_<i>.fa.gz`) containing
+When splitting, Spl-IsoQuant writes an additional output file (`*.split_reads_<i>.fa.gz`) containing
 the extracted cDNA segments, and uses it in place of the original reads for alignment. Each
 segment is named with the original read ID plus coordinates and strand:
 `{read_id}_{start}_{end}_{strand}`. The file is gzipped unless `--no_gzip` is set; minimap2
@@ -355,7 +355,7 @@ reads it compressed, so alignment is not slowed down.
 
 Splitting rewrites the reads, so the pieces have to be aligned afresh. Supplying an aligned
 BAM (`--bam`) says the opposite - that no mapping should happen - so the two requests
-contradict each other and IsoQuant aborts rather than guessing. This applies to `auto` as well
+contradict each other and Spl-IsoQuant aborts rather than guessing. This applies to `auto` as well
 as `true`: pass the raw reads if you want the molecules split and re-aligned, or
 `--split_molecules false` to analyse the alignments as they are.
 
@@ -388,7 +388,7 @@ these spots instead of individual barcodes.
 In this case, use `--barcode2barcode` option to provide barcode to spot mapping (see details above).
 
 ```bash
-isoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
+splisoquant.py --reference genome.fa --genedb genes.gtf --complete_genedb \
   --fastq reads.fastq.gz --data_type nanopore \
   --mode visium_hd --barcode_whitelist part1.txt part2.txt \
   --barcode2barcode barcode2spot.tsv:0:1,2 \
@@ -405,7 +405,7 @@ python isoquant_lib/scripts/prepare_visium_spot_ids.py part1_to_y.tsv part2_to_x
 
 ### Count matrices
 
-Single-cell/spatial modes produce grouped count matrices in addition to the standard IsoQuant output.
+Single-cell/spatial modes produce grouped count matrices in addition to the standard Spl-IsoQuant output.
 Use `--counts_format` to control the output format:
 
 * `default` - automatic selection: matrix format for small numbers of groups (<=100), MTX for larger datasets;
@@ -420,7 +420,7 @@ Grouped counts can also be converted after the run using `isoquant_lib/quantific
 Use `--read_group` to control how reads are grouped for quantification.
 Multiple grouping strategies can be combined (space-separated), producing separate count tables for each.
 
-In single-cell/spatial modes, IsoQuant automatically adds `--read_group barcode`
+In single-cell/spatial modes, Spl-IsoQuant automatically adds `--read_group barcode`
 **only when** `--barcoded_reads` or `--barcode2spot` are not set.
 Use `--read_group barcode` to group reads by barcode explicitly. In case of a large number of barcodes, it may take a lot of time. 
 Use `--read_group no_auto` to disable automatic grouping.

@@ -1,6 +1,6 @@
 name: User manual
 
-# The manual is built from the latest release tag, not from master, so it always
+# The manual is built from the latest release tag, not from main, so it always
 # matches the released version. To publish documentation fixes for the current
 # release, move its tag onto the fixing commit (git tag -f vX.Y.Z && git push -f origin vX.Y.Z);
 # the uploaded release archive is unaffected.

@@ -2,8 +2,8 @@ name: Barcode Human 10x concatenated reads
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '30 3 * * 2'
+#  schedule:
+#  - cron: '30 3 * * 2'
 
 env:
   LAUNCHER: ${{github.workspace}}/isoquant_tests/github/run_barcode_test.py

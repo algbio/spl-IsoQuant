@@ -50,7 +50,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'
@@ -64,7 +64,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'IsoQuant polyA prediction'
+      - name: 'Spl-IsoQuant polyA prediction'
         if: always()
         shell: bash
         env:

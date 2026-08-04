@@ -154,10 +154,10 @@ Tab-separated values, the columns are:
 
 Coordinate lists use `;%;` as the element separator.
 
-In single-cell/spatial modes IsoQuant always writes UMI-deduplication statistics to
+In single-cell/spatial modes Spl-IsoQuant always writes UMI-deduplication statistics to
 `SAMPLE_ID.UMI_filtered.ED{N}.stats.tsv` (independently of `--large_output`).
 
-When `--barcode2barcode` (spot-level UMI deduplication) is set, IsoQuant runs one
+When `--barcode2barcode` (spot-level UMI deduplication) is set, Spl-IsoQuant runs one
 extra UMI deduplication per spot column. These extra rounds do **not** emit their
 own `read_info` and are not used for quantification.
 Only the main barcode-based UMI deduplication outputs the default
@@ -210,7 +210,7 @@ Grouped counts are stored in linear format by default - a TSV file with 3 column
 
 #### Count matrices
 
-By default, IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
+By default, Spl-IsoQuant converts grouped counts with small number of groups/samples (<=100) to standard matrix format; 
 larger matrices (e.g. for single-cell experiments) will be saved to MTX format, which is compatible with the Seurat package.
 
 In standard matrix rows represent features, columns represent groups. While being more human-readable, 
@@ -314,7 +314,7 @@ one entry per read, e.g. barcodes for downstream cell/cell-type aggregation) run
 
 ## PolyA and TSS site prediction format
 
-When a gene annotation is provided (`--genedb`) IsoQuant predicts per-transcript
+When a gene annotation is provided (`--genedb`) Spl-IsoQuant predicts per-transcript
 transcription end (polyA) and, with full-length data (`--fl_data`), transcription
 start (TSS) sites. Predictions are written to `*.polyA_prediction.tsv` and
 `*.TSS_prediction.tsv`. 
@@ -340,7 +340,7 @@ Grouped files contain two additional columns (one row per predicted site and gro
 ## Transcript models format
 
 Constructed transcript models are stored in usual [GTF format](https://www.ensembl.org/info/website/upload/gff.html).
-IsoQuant outputs:
+Spl-IsoQuant outputs:
 - `*.transcript_models.gtf` - a set of expressed known and novel transcripts;
 - `*.extended_annotation.gtf` - all known transcripts plus discovered novel ones.
 
@@ -377,7 +377,7 @@ Quantification results for transcripts and genes from `*.transcript_models.gtf` 
 
 #### SQANTI-like output
 
-If `--sqanti_output` is set, IsoQuant will produce output in [SQANTI](https://github.com/ConesaLab/SQANTI3)-like format that 
+If `--sqanti_output` is set, Spl-IsoQuant will produce output in [SQANTI](https://github.com/ConesaLab/SQANTI3)-like format that 
 provides comparison between discovered novel transcripts vs reference transcripts (`*.novel_vs_known.SQANTI-like.tsv`).
 
 

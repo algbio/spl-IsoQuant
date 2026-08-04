@@ -10,7 +10,7 @@ import argparse
 
 import pytest
 
-import isoquant
+import splisoquant
 from isoquant_lib.barcode_calling import options
 from isoquant_lib.modes import (
     DEPRECATED_MODE_ALIASES,
@@ -33,7 +33,7 @@ def resolve(mode, split_molecules=None, needs_mapping=True):
     options.resolve_deprecated_mode(args)
     args.mode = IsoQuantMode[args.mode]
     options.resolve_split_molecules(args)
-    isoquant._reject_splitting_aligned_input(args)
+    splisoquant._reject_splitting_aligned_input(args)
     return args.mode, args.split_molecules
 
 

@@ -1,23 +1,26 @@
 # Quick start
 
-* IsoQuant can installed via pip:
+* Spl-IsoQuant is installed from GitHub:
 
-        pip install isoquant
-
-* Via conda (bioconda channel):
-
-        conda create -c conda-forge -c bioconda -n isoquant python=3.12 isoquant
-
-* Or from GitHub:
-
-        git clone https://github.com/ablab/IsoQuant.git 
-        cd IsoQuant
+        git clone https://github.com/algbio/spl-IsoQuant.git 
+        cd spl-IsoQuant
         git checkout latest
         pip install -e .
 
 Installation typically takes no more than a few minutes.
 
-* If running simply from [the source archive](https://github.com/ablab/IsoQuant/releases/) you will need:
+* Spl-IsoQuant is **not** distributed via PyPI or bioconda and will not be published there.
+  The original [IsoQuant](https://github.com/ablab/IsoQuant) provides the same functionality
+  and is available from both:
+
+        pip install isoquant
+
+        conda create -c conda-forge -c bioconda -n isoquant python=3.12 isoquant
+
+  These install the `isoquant` executable, not `splisoquant`. If you install this way,
+  use `isoquant` in place of `splisoquant` in all commands below.
+
+* If running simply from [the source archive](https://github.com/algbio/spl-IsoQuant/releases/) you will need:
   - Python3 (3.8 or higher)
   - [gffutils](https://pythonhosted.org/gffutils/installation.html)
   - [pysam](https://pysam.readthedocs.io/en/latest/index.html)
@@ -41,26 +44,26 @@ You will also need to have [minimap2](https://github.com/lh3/minimap2) and [samt
 
 * Verify your installation by running (typically takes less than 1 minute):
 
-        isoquant --test
+        splisoquant --test
 
-* To run IsoQuant on raw FASTQ/FASTA files, use the following command
+* To run Spl-IsoQuant on raw FASTQ/FASTA files, use the following command
 
-        isoquant --reference /PATH/TO/reference_genome.fasta \
+        splisoquant --reference /PATH/TO/reference_genome.fasta \
         --genedb /PATH/TO/gene_annotation.gtf \
         --fastq /PATH/TO/sample1.fastq.gz /PATH/TO/sample2.fastq.gz \
         --data_type (assembly|pacbio_ccs|nanopore) -o OUTPUT_FOLDER
 
     For example, using the toy data provided within this repository,
 
-        isoquant --fastq isoquant_lib/test_data/chr9.4M.ont.sim.fq.gz \
-        --reference isoquant_lib/test_data/chr9.4M.fa.gz \
-        --genedb isoquant_lib/test_data/chr9.4M.gtf.gz \
-        --data_type nanopore --complete_genedb -p TEST_DATA --output isoquant_test 
+        splisoquant --fastq isoquant_tests/simple_data/chr9.4M.ont.sim.fq.gz \
+        --reference isoquant_tests/simple_data/chr9.4M.fa.gz \
+        --genedb isoquant_tests/simple_data/chr9.4M.gtf.gz \
+        --data_type nanopore --complete_genedb -p TEST_DATA --output splisoquant_test 
 
 
-* To run IsoQuant on aligned reads (make sure your BAM is sorted and indexed) use the following command:
+* To run Spl-IsoQuant on aligned reads (make sure your BAM is sorted and indexed) use the following command:
 
-        isoquant --reference /PATH/TO/reference_genome.fasta \
+        splisoquant --reference /PATH/TO/reference_genome.fasta \
         --genedb /PATH/TO/gene_annotation.gtf \
         --bam /PATH/TO/sample1.sorted.bam /PATH/TO/sample2.sorted.bam \
         --data_type (assembly|pacbio_ccs|nanopore) -o OUTPUT_FOLDER
@@ -69,11 +72,11 @@ You will also need to have [minimap2](https://github.com/lh3/minimap2) and [samt
 
 * Using reference annotation is optional since version 3.0, you may preform de novo transcript discovery without providing `--genedb` option:
 
-        isoquant --reference /PATH/TO/reference_genome.fasta \
+        splisoquant --reference /PATH/TO/reference_genome.fasta \
         --fastq /PATH/TO/sample1.fastq.gz /PATH/TO/sample2.fastq.gz \
         --data_type (assembly|pacbio_ccs|nanopore) -o OUTPUT_FOLDER
 
-* If multiple files are provided, IsoQuant will create a single output annotation and a single set of gene/transcript expression tables.
+* If multiple files are provided, Spl-IsoQuant will create a single output annotation and a single set of gene/transcript expression tables.
 
 * To perform different types of analysis, check out `--analysis` option.
 

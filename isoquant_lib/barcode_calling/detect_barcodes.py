@@ -8,7 +8,7 @@
 Core barcode detection functionality.
 
 This module contains the main barcode calling logic used by both
-isoquant_detect_barcodes.py (standalone CLI) and isoquant.py (integrated pipeline).
+splisoquant_detect_barcodes.py (standalone CLI) and splisoquant.py (integrated pipeline).
 """
 
 import concurrent.futures

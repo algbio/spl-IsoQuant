@@ -7,8 +7,8 @@ name: CI Data Integrity
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 3 * * 0'
+#  schedule:
+#  - cron: '0 3 * * 0'
 
 env:
   BIN_PATH: /abga/work/andreyp/ci_isoquant/bin/

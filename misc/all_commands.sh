@@ -29,14 +29,14 @@ TALON_PATH=""
 # minimap2 must be in $PATH
 if [ -z "$INPUT_BAM" ]
 then
-  $ISOQUANT_PATH/isoquant.py --reference $REF_GENOME --complete_genedb --genedb $REF_ANNOTATION --fastq $INPUT_READS \
+  $ISOQUANT_PATH/splisoquant.py --reference $REF_GENOME --complete_genedb --genedb $REF_ANNOTATION --fastq $INPUT_READS \
   -l $DATASET_NAME -d $ISOQUANT_DATA_TYPE --run_aligner_only -t $THREADS -o "mapped_reads_"$DATASET_NAME
   INPUT_BAM=`realpath "mapped_reads_"$DATASET_NAME/$DATASET_NAME/aux/*.bam`
 fi
 
 # reference based transcript discovery
 
-$ISOQUANT_PATH"isoquant.py" --reference $REF_GENOME --complete_genedb --genedb $REF_ANNOTATION --bam $INPUT_BAM \
+$ISOQUANT_PATH"splisoquant.py" --reference $REF_GENOME --complete_genedb --genedb $REF_ANNOTATION --bam $INPUT_BAM \
 -d $ISOQUANT_DATA_TYPE -t $THREADS -l $DATASET_NAME -o "IsoQuant_out_"$DATASET_NAME
 ISOQUANT_GTF="IsoQuant_out_"$DATASET_NAME/$DATASET_NAME/$DATASET_NAME".transcript_models.gtf"
 
@@ -95,7 +95,7 @@ echo $ISOQUANT_PATH >> gtfs.list
 $ISOQUANT_PATH/misc/denovo_model_stats.py --gtf_list gtfs.list -o $DATASET_NAME"_denovo_stats"
 
 # reference-free analysis, path to gffcompare must be in $PATH
-$ISOQUANT_PATH"isoquant.py" --reference $REF_GENOME --bam $INPUT_BAM \
+$ISOQUANT_PATH"splisoquant.py" --reference $REF_GENOME --bam $INPUT_BAM \
 -d $ISOQUANT_DATA_TYPE -t $THREADS -l $DATASET_NAME -o "IsoQuant_denovo_out_"$DATASET_NAME
 ISOQUANT_GTF="IsoQuant_denovo_out_"$DATASET_NAME/$DATASET_NAME/$DATASET_NAME".transcript_models.gtf"
 

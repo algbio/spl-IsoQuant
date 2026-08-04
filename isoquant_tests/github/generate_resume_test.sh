@@ -27,7 +27,7 @@ WHICH=${2:-all}
 RESUME_DIR=${3:-/abga/work/andreyp/ci_isoquant/data/resume_checkpoints}
 DATA=/abga/work/andreyp/ci_isoquant/data
 RUN_UNTIL="python3 $ISOQUANT_DIR/isoquant_tests/github/run_until.py"
-ISOQUANT="python3 $ISOQUANT_DIR/isoquant.py"
+ISOQUANT="python3 $ISOQUANT_DIR/splisoquant.py"
 mkdir -p "$RESUME_DIR"
 
 CHECK_ONLY=0

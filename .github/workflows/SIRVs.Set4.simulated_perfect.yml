@@ -2,8 +2,8 @@ name: SIRVs simulated perfect
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 12 * * 2'
+#  schedule:
+#  - cron: '0 12 * * 2'
 
 env:
   RUN_NAME: SIRVs.simulated
@@ -20,7 +20,7 @@ jobs:
   launch-runner:
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant and QC'
+    name: 'Running Spl-IsoQuant and QC'
 
     steps:
       - name: 'Cleanup'
@@ -43,7 +43,7 @@ jobs:
           export PATH=$PATH:${{env.BIN_PATH}}
           python3 ${{env.LAUNCHER}} ${{env.CFG_DIR}}/${{env.STEP_NAME}}.yaml -o ${{env.OUTPUT_BASE}}
 
-      - name: 'IsoQuant: perfect reads with polyA'
+      - name: 'Spl-IsoQuant: perfect reads with polyA'
         if: always()
         shell: bash
         env:

@@ -15,7 +15,7 @@ hyperparameters used for the shipped model, and writes the JSON model file.
 Typical use::
 
     # 1. Collect features from a real run (hidden dev-only flag):
-    python isoquant.py --genedb ANNOTATION.gtf --bam READS.bam --data_type nanopore \\
+    python splisoquant.py --genedb ANNOTATION.gtf --bam READS.bam --data_type nanopore \\
         -o train_run --prefix run --collect_polya_training peaks.csv
 
     # 2. Train a fresh model:

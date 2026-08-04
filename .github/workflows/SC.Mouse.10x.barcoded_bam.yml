@@ -2,8 +2,8 @@ name: SC Mouse 10x barcoded_bam Allinfo
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 6 * * 6'
+#  schedule:
+#  - cron: '0 6 * * 6'
 
 env:
   LAUNCHER: ${{github.workspace}}/isoquant_tests/github/run_pipeline.py

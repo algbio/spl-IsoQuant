@@ -477,7 +477,7 @@ class TestBarcode2BarcodeArgParsing:
     def test_arg_added(self):
         """Verify the argument exists in the parser."""
         import sys
-        sys.argv = ['isoquant.py', '--full_help']
+        sys.argv = ['splisoquant.py', '--full_help']
         # We just test that parse_barcode2spot_spec works on barcode2barcode-style specs
         filename, bc_col, spot_cols = parse_barcode2spot_spec("mapping.tsv:0:1,2")
         assert filename == "mapping.tsv"

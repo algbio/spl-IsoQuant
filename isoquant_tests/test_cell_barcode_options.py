@@ -109,7 +109,7 @@ class TestNCellsIgnoredWarnings:
 
 
 class TestBothEntryPointsAgree:
-    """isoquant.py and isoquant_detect_barcodes.py used to carry separate copies of this."""
+    """splisoquant.py and splisoquant_detect_barcodes.py used to carry separate copies of this."""
 
     @staticmethod
     def standalone_args(**kwargs):

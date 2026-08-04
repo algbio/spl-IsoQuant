@@ -160,7 +160,7 @@ def run_isoquant(args, config_dict):
 
     if "resume" in config_dict:
         assert "label" in config_dict
-        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "isoquant.py"), "-o", output_folder, "--resume"]
+        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "splisoquant.py"), "-o", output_folder, "--resume"]
         src_dir = fix_path(config_file, config_dict["resume"])
         for f in os.listdir(src_dir):
             fpath = os.path.join(src_dir, f)
@@ -172,7 +172,7 @@ def run_isoquant(args, config_dict):
         genedb = fix_path(config_file, config_dict["genedb"]) if "genedb" in config_dict else None
         genome = fix_path(config_file, config_dict["genome"])
         log.info('== Running IsoQuant ==')
-        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "isoquant.py"), "-o", output_folder,
+        isoquant_command_list = ["python3", os.path.join(isoquant_dir, "splisoquant.py"), "-o", output_folder,
                                  "-r", genome, "-d", config_dict["datatype"]]
         if "yaml" in config_dict:
             # experiment names come from the YAML file, so the checked one has to be given as label

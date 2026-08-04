@@ -3,7 +3,7 @@ requires = ["setuptools>=64,<75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "isoquant"
+name = "spl-isoquant"
 dynamic = ["version"]
 description = "Reference-based analysis and quantification of long RNA reads"
 readme = "README.md"
@@ -49,17 +49,17 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ablab/IsoQuant"
-Documentation = "https://ablab.github.io/IsoQuant"
-Repository = "https://github.com/ablab/IsoQuant"
+Homepage = "https://github.com/algbio/spl-IsoQuant"
+Documentation = "https://algbio.github.io/spl-IsoQuant"
+Repository = "https://github.com/algbio/spl-IsoQuant"
 
 [project.scripts]
-isoquant = "isoquant:main_entry"
-isoquant-detect-barcodes = "isoquant_detect_barcodes:main_entry"
-isoquant-visualize = "isoquant_visualize:main"
+splisoquant = "splisoquant:main_entry"
+splisoquant-detect-barcodes = "splisoquant_detect_barcodes:main_entry"
+splisoquant-visualize = "splisoquant_visualize:main"
 
 [tool.setuptools]
-py-modules = ["isoquant", "isoquant_detect_barcodes", "isoquant_visualize"]
+py-modules = ["splisoquant", "splisoquant_detect_barcodes", "splisoquant_visualize"]
 
 [tool.setuptools.packages.find]
 include = ["isoquant_lib*"]

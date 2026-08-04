@@ -2,8 +2,8 @@ name: Fusion PacBio simulated
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '0 5 * * 0'
+#  schedule:
+#  - cron: '0 5 * * 0'
 
 env:
   RUN_NAME: Fusion.PB_simulated
@@ -52,7 +52,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     runs-on:
       labels: [isoquant]
-    name: 'Running IsoQuant fusion detection (PacBio) and QC'
+    name: 'Running Spl-IsoQuant fusion detection (PacBio) and QC'
 
     steps:
       - name: 'Cleanup'
@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 'IsoQuant Fusion (PacBio)'
+      - name: 'Spl-IsoQuant Fusion (PacBio)'
         if: always()
         shell: bash
         env:

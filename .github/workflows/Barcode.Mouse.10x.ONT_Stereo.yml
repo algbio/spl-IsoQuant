@@ -2,8 +2,8 @@ name: Barcode Mouse 10x ONT 3.8% error rate
 
 on:
   workflow_dispatch:
-  schedule:
-  - cron: '30 2 * * 1'
+#  schedule:
+#  - cron: '30 2 * * 1'
 
 env:
   LAUNCHER: ${{github.workspace}}/isoquant_tests/github/run_barcode_test.py

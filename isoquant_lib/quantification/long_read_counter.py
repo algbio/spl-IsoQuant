@@ -1141,7 +1141,7 @@ class IntronCounter(ProfileFeatureCounter):
 # The two incomplete_* variants carry a 50 bp floor by construction -- both
 # detection sites in junction_comparator.py gate them on
 # overlaps_at_least(read_region, intron, params.minor_exon_extension), and
-# args.minor_exon_extension is 50 (isoquant.py). A read end has to run at least
+# args.minor_exon_extension is 50 (splisoquant.py). A read end has to run at least
 # 50 bases into an intron to produce one, so no extra length check is needed (and
 # none is possible here: MatchEvent stores index pairs, not coordinates).
 INTRON_RETENTION_EVENTS = frozenset((

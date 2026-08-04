@@ -7,7 +7,7 @@
 """
 Resolving and validating the barcode calling command line options.
 
-Shared by isoquant.py and isoquant_detect_barcodes.py so that both entry points agree on
+Shared by splisoquant.py and splisoquant_detect_barcodes.py so that both entry points agree on
 what --mode, --split_molecules, --n_cells and --barcode_correction mean.
 """
 
