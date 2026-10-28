@@ -403,6 +403,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#read-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read tags
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -814,6 +825,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#read-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read tags
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -879,6 +901,18 @@ interested in comparing expression between different replicas/conditions within 
 <h3 id="short-reads-for-alignment-correction">Short reads for alignment correction</h3>
 <p>A BAM file with Illumina reads can be provided via <code>--illumina_bam</code>. It cannot be the only input, but may only be used with either <code>--bam</code> or <code>--fastq</code>.
 The option accepts one or multiple bam files separated by space. All files will be combined and used to correct offsets between introns in long and short reads as well as skipped exons.</p>
+<h3 id="read-tags">Read tags</h3>
+<p>When Spl-IsoQuant aligns the reads itself (<code>--fastq</code> or <code>--unmapped_bam</code>), it keeps read tags in the resulting BAM file,
+e.g. the poly-A tail length estimated by Dorado (<code>pt:i</code>), which can be used later with <code>--polya_trimmed tag:pt</code> 
+without realigning the reads. Tags are taken from:</p>
+<ul>
+<li>unmapped BAM files, e.g. produced by <code>dorado basecaller</code>;</li>
+<li>FASTA/FASTQ files, in which read headers contain tab-separated SAM tags after the read id 
+  (<code>@read_id&lt;TAB&gt;pt:i:85&lt;TAB&gt;...</code>), e.g. produced by <code>dorado basecaller --emit-fastq</code> or <code>samtools fastq -T</code>.
+  Headers are checked on the first 1000 reads; if any of them has a comment that is not made of SAM tags 
+  (e.g. MinKNOW-style <code>runid=... read=...</code>), no tags are kept.</li>
+</ul>
+<p>If input data contains minimap2 tags (e.g. <code>NM</code>, <code>ts</code>) and tags referring to BAM header lines (<code>RG</code>, <code>PG</code>), those will not be copied to the aligned BAM files to avoid duplications.</p>
 <h2 id="specifying-input-data-via-yaml-file">Specifying input data via yaml file</h2>
 <p>To provide all input files in a single description file, you can use a <a href="https://www.redhat.com/en/topics/automation/what-is-yaml">YAML</a> file via <code>--yaml</code> (see description below).
 You can provide multiple experiments in a single YAML file with each experiment containing an arbitrary number of samples/replicas.

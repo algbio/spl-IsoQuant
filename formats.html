@@ -619,6 +619,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#tagged-and-deduplicated-bam" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tagged and deduplicated BAM
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1008,6 +1019,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#tagged-and-deduplicated-bam" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tagged and deduplicated BAM
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1364,6 +1386,48 @@ Only the main barcode-based UMI deduplication outputs the default
 <code>SAMPLE_ID.UMI_filtered.barcode_barcode_col{C}.ED{N}.allinfo[.gz]</code> and corresponding
 statistics to <code>SAMPLE_ID.UMI_filtered.barcode_barcode_col{C}.ED{N}.stats.tsv</code>
 (<code>{C}</code> = 0-based spot-column index).</p>
+<h3 id="tagged-and-deduplicated-bam">Tagged and deduplicated BAM</h3>
+<p>Two optional BAM outputs for single-cell and spatial modes, enabled with
+<code>--large_output tagged_bam</code> and <code>--large_output deduplicated_bam</code> respectively. Both are
+indexed, and alignment records are copied from the input unchanged apart from the added tags.</p>
+<p><code>SAMPLE_ID.tagged.bam</code> holds every input alignment - primary, secondary, supplementary and
+unmapped, across all references including unplaced scaffolds - so its record count equals the
+input's. <code>SAMPLE_ID.deduplicated.bam</code> holds only the primary alignments of the reads that
+survived UMI deduplication - the same read set as <code>SAMPLE_ID.UMI_filtered.ED{N}.allinfo</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Present in</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CB</code> (or <code>--barcode_tag</code>)</td>
+<td>both</td>
+<td>cell barcode</td>
+</tr>
+<tr>
+<td><code>UB</code> (or <code>--umi_tag</code>)</td>
+<td>both</td>
+<td>UMI</td>
+</tr>
+<tr>
+<td><code>GX</code></td>
+<td>deduplicated only</td>
+<td>assigned gene ID</td>
+</tr>
+<tr>
+<td><code>TX</code></td>
+<td>deduplicated only</td>
+<td>assigned reference transcript ID</td>
+</tr>
+</tbody>
+</table>
+<p>A tag is <strong>omitted</strong> when the value is unknown rather than being set to a placeholder, so a
+read with no barcode carries no <code>CB</code>, and a novel or ambiguous read carries no <code>TX</code> (<code>allinfo</code>
+writes <code>None</code> in the corresponding column).</p>
 <h2 id="quantification-formats">Quantification formats</h2>
 <h3 id="transcript-and-gene-counts">Transcript and gene counts</h3>
 <h4 id="linear-format">Linear format</h4>
@@ -1410,21 +1474,48 @@ and the deprecated <code>old_exon_counts.tsv</code> (only with <code>--old_exon_
 <li><code>include_counts</code> - number of reads that include this feature;</li>
 <li><code>exclude_counts</code> - number of reads that span, but do not include this feature;</li>
 </ul>
-<h3 id="exon-count-format">Exon count format</h3>
-<p>This is the format of <code>exon_counts.tsv</code>. Overlapping reference exons are grouped
-into regions; each region emits one row per included exon variant plus one
-region-level exclusion row. Tab-separated values, the columns are:</p>
+<p>In <code>intron_retention_counts.tsv</code> the two count columns have a different meaning:</p>
 <ul>
-<li><code>chr</code> - chromosome ID;</li>
-<li><code>region_start</code> - region leftmost 1-based position;</li>
-<li><code>region_end</code> - region rightmost 1-based position;</li>
-<li><code>strand</code> - region strand;</li>
-<li><code>exon_start</code>, <code>exon_end</code> - exon variant coordinates for <code>inclusion</code> rows, <code>.</code> for <code>exclusion</code> rows;</li>
-<li><code>gene_id</code> - gene the read was assigned to;</li>
-<li><code>feature_kind</code> - <code>inclusion</code> (read selects this exon variant) or <code>exclusion</code> (read skips the whole region);</li>
-<li><code>group_id</code> - read group if provided (NA by default);</li>
-<li><code>count</code> - read count.</li>
+<li><code>include_counts</code> - number of reads retaining this intron, i.e. covering it fully (spliced or mono-exonic reads)
+or running at least 50 bp into it from a read end; retention is detected relative to the isoform(s) the read was assigned to,
+and a read is counted once even when assigned to several isoforms sharing this intron;</li>
+<li><code>exclude_counts</code> - number of reads that splice this intron out, i.e. contain a matching splice junction;
+this equals <code>include_counts</code> of the same intron in <code>splice_junction_counts.tsv</code>.</li>
 </ul>
+<p>Thus, <code>include_counts / (include_counts + exclude_counts)</code> estimates the intron retention ratio.
+Reads skipping the intron via other splice junctions are counted in neither column.
+Reads consistent with an annotated intron-retaining isoform are not reported as retaining,
+and reads lying entirely within an intron are not counted.</p>
+<h3 id="exon-count-format">Exon count format</h3>
+<p>This is the format of <code>exon_counts.tsv</code>. Every reference exon is quantified independently;
+for each read it is classified as one of the following:</p>
+<ul>
+<li>full inclusion - a read exon matches both exon splice sites; for the first and last exon of a transcript
+only the internal splice site needs to match, the read may start / end inside the exon
+(exons that are terminal in some isoforms and internal in others are treated as internal);</li>
+<li>left / right half-inclusion - only the exon's left / right splice site is confirmed, 
+the read starts / ends inside this internal exon;</li>
+<li>skipping - the exon lies within a read intron;</li>
+<li>alternative usage - a read exon overlaps the reference exon but has alternative splice sites or a retained intron;</li>
+<li>reads that do not overlap the exon are not counted.</li>
+</ul>
+<p>Only reads assigned to a single gene are used. Tab-separated values, the columns are:</p>
+<ul>
+<li><code>chr</code>, <code>start</code>, <code>end</code>, <code>strand</code>, <code>flags</code> - exon coordinates and flags, same as in the <a href="#splice-junctions-count-format">splice junction count format</a>;</li>
+<li><code>gene_ids</code> - gene id the reads were assigned to;</li>
+<li><code>group_id</code> - read group if provided (NA by default);</li>
+<li><code>include_counts</code> - total number of reads including this exon (<code>n_full + n_left + n_right</code>);</li>
+<li><code>exclude_counts</code> - total number of reads skipping this exon;</li>
+<li><code>n_full</code> - number of reads fully including this exon;</li>
+<li><code>n_left</code> - number of reads confirming only the left splice site of this exon;</li>
+<li><code>n_right</code> - number of reads confirming only the right splice site of this exon;</li>
+<li><code>n_alt</code> - number of reads using an overlapping exon with different boundaries.</li>
+</ul>
+<p>Exon inclusion level (PSI) can be computed as <code>include_counts / (include_counts + exclude_counts)</code>, 
+or <code>n_full / (n_full + exclude_counts)</code> to use only reads confirming both splice sites.
+Alternatively, <code>n_alt</code> can be added to the denominator to obtain the fraction of reads using this exact exon among all reads covering it.
+Note that PSI values are meaningful mostly for internal exons; counts for terminal exons are less reliable,
+e.g. reads extending beyond the annotated transcript start / end are counted as alternative usage.</p>
 <h3 id="exon-splice-site-count-format">Exon splice-site count format</h3>
 <p>This is the format of <code>exon_splice_site_counts.tsv</code> suitable for <a href="https://github.com/noush-joglekar/scisorseqr">ScisorseqR package</a>. 
 Overlapping candidate exons
@@ -1478,6 +1569,10 @@ where <code>###</code> is the unique number (not necessarily consecutive), <code
 <li>nic - novel in catalog, new transcript that contains only annotated introns;</li>
 <li>nnic - novel not in catalog, new transcript that contains unannotated introns.</li>
 </ul>
+<p>Note that this type is derived from the intron chain alone. Transcripts discovered in regions
+with no annotated genes have no annotated introns to match and are thus always labelled <code>nnic</code>,
+as are novel mono-exonic transcripts. Accordingly, such transcripts are reported as <code>intergenic</code>
+in <code>*.novel_vs_known.SQANTI-like.tsv</code>.</p>
 <p>Each exon also has a unique ID stored in <code>exon_id</code> attribute.</p>
 <p>In addition, each transcript contains <code>canonical</code> property if <code>--check_canonical</code> is set.</p>
 <p>If <code>--sqanti_output</code> option is set, each novel transcript also has a <code>similar_reference_id</code> field containing ID of
@@ -1494,7 +1589,7 @@ A read may be marked as <code>discarded</code> if it was assigned to an isoform 
 provides comparison between discovered novel transcripts vs reference transcripts (<code>*.novel_vs_known.SQANTI-like.tsv</code>).</p>
 <h2 id="fusion-prediction-format">Fusion prediction format</h2>
 <p>Produced only when fusion detection is requested via <code>--analysis fusion</code>.
-This option will result in one <code>fusion_&lt;bam_basename&gt;.tsv</code> file per input BAM with the following columns:</p>
+This option will result in one <code>SAMPLE_ID.fusions.tsv</code> file per sample (all of the sample's BAM files are combined) with the following columns:</p>
 <ul>
 <li><code>LeftGene</code> / <code>RightGene</code> - gene symbols of the two fusion partners;</li>
 <li><code>LeftBiotype</code> / <code>RightBiotype</code> - biotype of each partner gene (e.g. <code>protein_coding</code>);</li>

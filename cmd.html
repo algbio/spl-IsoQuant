@@ -489,6 +489,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Output options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tagged-and-deduplicated-bam-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tagged and deduplicated BAM files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1060,6 +1077,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Output options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tagged-and-deduplicated-bam-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tagged and deduplicated BAM files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1295,7 +1329,22 @@ See more in <a href="examples.html">examples</a>.</p>
   having a poly-A tail on the 3'; read direction will be based on the alignment strand flag. 
   Thus, when using this option, make sure read sequences are properly oriented, i.e. match the original mRNA strand.
   Use this option at your own risk.</li>
+<li><code>tag:&lt;TAG&gt;</code>: read poly-A status from a BAM tag, e.g. <code>tag:pt</code> for Dorado (requires basecalling with <code>--estimate-poly-a</code>). A tail is considered present when the tag value &gt;= 0.
+  If the read has a <code>TS:A</code> tag (transcript strand relative to the read), the tail is placed on the corresponding end. Otherwise internal Spl-IsoQuant strand detection is used.
+  The tag must be present in the aligned reads. When Spl-IsoQuant aligns the reads itself, tags are kept automatically (see <a href="input.html#read-tags">read tags</a>); 
+  when providing your own alignments via <code>--bam</code>, make sure the aligner copies the tags, e.g. <code>samtools fastq -T pt,TS calls.bam | minimap2 -ax splice -y ...</code>.
+  Spl-IsoQuant warns if none of the checked alignments carry the tag.</li>
+<li><code>list:&lt;FILE&gt;</code>: a file with IDs of reads that have a poly-A tail, one per line (may be gzipped).
+  An optional second column (tab or space separated) with <code>+</code> or <code>-</code> gives the transcript strand relative to the read, and is treated as <code>TS:A</code> above; any other value is ignored.</li>
+<li><code>flnc:&lt;FILE&gt;</code>: <code>flnc.report.csv</code> produced by <code>isoseq refine</code>. Reads with <code>polyAlen</code> &gt; 0 have a tail at their 3' end;
+  the side is taken from the <code>strand</code> column (FLNC reads are oriented, so it is normally <code>+</code>); reads with <code>polyAlen</code> 0 are treated as having no tail, and tails detected in their sequence are discarded.
+  Use this option only with <code>flnc.bam</code> input (where tails are removed).</li>
 </ul>
+<p>Note that Spl-IsoQuant still runs sequence-based polyA tail detection for every read. If the external information and the sequence disagree, the external information is used.</p>
+<p><code>--illumina_bam</code>
+    Sorted and indexed BAM file(s) with short Illumina reads from the same sample. Short reads are used only for
+    correcting splice sites (and not for transcript discovery or quantification).
+    Can be used only together with <code>--bam</code> or <code>--fastq</code>, see <a href="input.html">input</a>.</p>
 <p><code>--prefix</code> or <code>-p</code>
     Prefix for all output files and subfolder name. <code>OUT</code> if not set.</p>
 <p><code>--labels</code> or <code>-l</code>
@@ -1378,6 +1427,10 @@ original file name, and barcode property (e.g. cell type).</p>
 <li><code>corrected_bed</code> - BED file with corrected read exon coordinates (<code>*.corrected_reads.bed.gz</code>);</li>
 <li><code>read2transcripts</code> - reads assigned to discovered transcript models, in the unified read_info format (<code>*.transcript_model_reads.tsv.gz</code>);</li>
 <li><code>allinfo</code> - old format for UMI filtered reads for single-cell/spatial modes (<code>*.allinfo</code>);</li>
+<li><code>tagged_bam</code> - single-cell/spatial modes only: a copy of the input alignments with the
+    detected barcode and UMI added as tags (<code>*.tagged.bam</code>), see below;</li>
+<li><code>deduplicated_bam</code> - single-cell/spatial modes only: the UMI-deduplicated alignments with
+    barcode, UMI, gene and transcript tags (<code>*.deduplicated.bam</code>), see below;</li>
 <li><code>none</code> - do not generate any large output files (not compatible with other values).</li>
 </ul>
 <p>Example usage:
@@ -1388,11 +1441,41 @@ original file name, and barcode property (e.g. cell type).</p>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Disable all large output files</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>splisoquant.py<span class="w"> </span>--large_output<span class="w"> </span>none<span class="w"> </span>...
 </span></code></pre></div></p>
+<h3 id="tagged-and-deduplicated-bam-files">Tagged and deduplicated BAM files</h3>
+<p>Both are indexed BAM files written for single-cell and spatial modes only, and both are off by
+default. Alignment records are copied unchanged apart from the tags, so anything that reads the
+original BAM works on these too.</p>
+<p><code>tagged_bam</code> keeps <strong>every</strong> alignment in the input - primary, secondary, supplementary and
+unmapped, across all references including unplaced scaffolds that Spl-IsoQuant does not analyse -
+and adds:</p>
+<ul>
+<li><code>--barcode_tag</code> (<code>CB</code> by default) - the detected cell barcode;</li>
+<li><code>--umi_tag</code> (<code>UB</code> by default) - the detected UMI.</li>
+</ul>
+<p>Unmapped reads are tagged like any other: the barcode is called from the read sequence and does
+not depend on the read having aligned. Reads with no barcode are kept without tags. The file is
+redundant when <code>--barcoded_bam</code> was used as input, since those alignments already carry the
+tags, and Spl-IsoQuant warns and skips.</p>
+<p><code>deduplicated_bam</code> keeps only the <strong>primary</strong> alignments of the reads that survived UMI
+filtering - one read per detected molecule - and additionally tags:</p>
+<ul>
+<li><code>GX</code> - the gene the read was assigned to;</li>
+<li><code>TX</code> - the transcript the read was assigned to.</li>
+</ul>
+<p>A tag is omitted rather than given a placeholder value when the corresponding value is unknown,
+so novel and ambiguous reads have no <code>TX</code> tag.</p>
+<p>Note that this file is a <strong>deduplicated</strong> view, not a general-purpose replacement for the input
+alignments: it holds one read per detected molecule, keeps only reads assigned to a gene, and
+drops secondary and supplementary records. Analyses that depend on chimeric or otherwise
+inconsistent reads - fusion detection in particular - must keep reading the original BAM.</p>
 <p>The <code>read_info.tsv</code> format can be also converted to old formats using the conversion script:
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>isoquant_lib.scripts.convert_read_info<span class="w"> </span>--read_info<span class="w"> </span>SAMPLE.read_info.tsv.gz<span class="w"> </span>--format<span class="w"> </span>read_assignments<span class="w"> </span>--output<span class="w"> </span>SAMPLE.read_assignments.tsv
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>-m<span class="w"> </span>isoquant_lib.scripts.convert_read_info<span class="w"> </span>--read_info<span class="w"> </span>SAMPLE.read_info.tsv.gz<span class="w"> </span>--format<span class="w"> </span>allinfo<span class="w"> </span>--output<span class="w"> </span>SAMPLE.allinfo.tsv
 </span></code></pre></div></p>
 <p>Note that large output files are gzipped by default unless <code>--no_gzip</code> is specified.</p>
+<p><code>--no_report</code>
+    Do not write the per-experiment run summary (<code>SAMPLE_ID.summary.html</code> and <code>SAMPLE_ID.summary_stats.json</code>),
+    which is produced by default. See <a href="output.html">output</a> for its contents.</p>
 <h2 id="pipeline-options">Pipeline options</h2>
 <p><code>--analysis</code></p>
 <p>Space-separated list of analyses to run. Supported values (short aliases in brackets):</p>
@@ -1418,12 +1501,12 @@ original file name, and barcode property (e.g. cell type).</p>
 <li>Exon splice-site counts (<code>*.exon_splice_site_counts.tsv</code>);</li>
 <li>Splice junction counts (<code>*.splice_junction_counts.tsv</code>);</li>
 <li>
-<p>Intron retention counts (<code>*.intron_retention_counts.tsv</code>);</p>
+<p>Intron retention counts (<code>*.intron_retention_counts.tsv</code>): reads retaining vs splicing out each reference intron;</p>
 </li>
 <li>
 <p><code>fusion</code> (requires gene annotation): fusion gene detection, produces:</p>
 </li>
-<li>Fusion gene predictions (<code>fusion_&lt;bam_basename&gt;.tsv</code>, one file per input BAM).</li>
+<li>Fusion gene predictions (<code>SAMPLE_ID.fusions.tsv</code>, one file per sample combining all its BAM files).</li>
 </ul>
 <p>Defaults when <code>--analysis</code> is not set:</p>
 <ul>
@@ -1436,8 +1519,9 @@ single-cell/spatial mode is allowed, but since it runs after UMI deduplication, 
 Feeding you data as pseudo-bulk (<code>--mode bulk</code>) is recommended for full transcript discovery.</p>
 <p><code>--resume</code>
     Resume a previously unfinished run. The output folder with the previous run must be specified.
-    Allowed options are <code>--threads</code>, <code>--debug</code>, <code>--high_memory</code>; other options cannot be changed.
-    Spl-IsoQuant will run from the beginning if the output folder does not contain the previous run.</p>
+    Allowed options are <code>--threads</code>, <code>--debug</code>, <code>--high_memory</code>, <code>--keep_tmp</code>; other options cannot be changed.
+    Every finished stage is skipped, including experiments that were fully processed.
+    Spl-IsoQuant 4.1 and above cannot run with <code>--resume</code> from a partial run generated with previous version.</p>
 <p><code>--force</code>
     Force to overwrite the folder with previous run.</p>
 <p><code>--threads</code> or <code>-t</code>
@@ -1450,7 +1534,7 @@ Feeding you data as pseudo-bulk (<code>--mode bulk</code>) is recommended for fu
     Perform exon and splice junction counting.</p>
 <p><code>--count_intron_retentions</code>
     <em>Deprecated</em>: use <code>--analysis exon_quantification</code> instead.
-    Count intron retention events per reference intron.</p>
+    Count reads retaining and splicing out each reference intron.</p>
 <h2 id="single-cell-and-spatial-transcriptomics-options">Single-cell and spatial transcriptomics options</h2>
 <p>See <a href="single_cell.html">single-cell and spatial transcriptomics</a> for a detailed guide on
 supported protocols, examples, molecule description format, and UMI deduplication.</p>
@@ -1460,26 +1544,68 @@ supported protocols, examples, molecule description format, and UMI deduplicatio
 <li><code>bulk</code> - standard bulk RNA-seq mode (default)</li>
 <li><code>tenX_v3</code> - 10x Genomics single-cell 3' gene expression</li>
 <li><code>tenX_v2</code> - 10x Genomics single-cell 3' v2 gene expression</li>
-<li><code>tenX_v3_split</code> - 10x Genomics 3' v3 with <a href="single_cell.html#read-splitting-modes">read splitting</a> for concatenated reads</li>
-<li><code>tenX_v2_split</code> - 10x Genomics 3' v2 with <a href="single_cell.html#read-splitting-modes">read splitting</a> for concatenated reads</li>
 <li><code>visium_5prime</code> - 10x Genomics Visium 5' spatial transcriptomics</li>
 <li><code>visium_hd</code> - 10x Genomics Visium HD spatial transcriptomics</li>
 <li><code>curio</code> - Curio Bioscience spatial data</li>
 <li><code>stereoseq</code> - Stereo-seq spatial data</li>
-<li><code>stereoseq_nosplit</code> - Stereo-seq without read splitting</li>
 <li><code>custom_sc</code> - custom single-cell/spatial mode using a <a href="single_cell.html#molecule-description-format-mdf">molecule description file (MDF)</a></li>
 </ul>
 <p>Single-cell and spatial modes enable automatic barcode calling and UMI-based deduplication.</p>
+<p><code>--split_molecules</code></p>
+<p>Whether to split reads that contain several cDNA molecules ligated end to end during library
+preparation (see <a href="single_cell.html#read-splitting">read splitting</a>). Accepts:</p>
+<ul>
+<li><code>auto</code> (default) - split whenever the protocol supports it, and do nothing where it does not</li>
+<li><code>true</code> - split, and stop with an error if the protocol has no splitting detector, so that a
+  request that cannot be honoured is never silently ignored</li>
+<li><code>false</code> - never split</li>
+</ul>
+<p>Splitting is supported for <code>tenX_v3</code>, <code>tenX_v2</code>, <code>stereoseq</code> and <code>visium_5prime</code>. It is worth
+enabling even on libraries without concatenated molecules: on non-concatenated 10x data it
+recovers about one extra point of recall at unchanged precision, at roughly twice the barcode
+calling runtime.</p>
+<p>Splitting requires raw reads. The split molecules have to be aligned, so requesting it
+alongside an already aligned input (<code>--bam</code>) is contradictory and Spl-IsoQuant stops with an error
+- under <code>auto</code> as well as <code>true</code>. Supply the reads as FASTQ/FASTA to have them split and
+mapped, or pass <code>--split_molecules false</code> to use the alignments as given.</p>
+<p>The superseded mode names <code>tenX_v3_split</code>, <code>tenX_v2_split</code> and <code>stereoseq_nosplit</code> still work
+and are translated to the corresponding <code>--mode</code> plus <code>--split_molecules</code> combination.</p>
 <p><code>--barcode_whitelist</code></p>
 <p>Path to file(s) with barcode whitelist(s) for barcode calling.
 Required for single-cell/spatial modes unless <code>--barcoded_reads</code> or <code>--barcoded_bam</code> is provided.</p>
 <p>File should contain one barcode sequence per line. 
 More than 1 tab-separated column is allowed, but only the first will be used.
 Supports plain text and gzipped files.</p>
+<p>Accepts the literal value <code>auto</code> instead of a file, which detects the cell barcodes from the
+reads with no candidate list at all (see <code>--n_cells</code>). Supplying the protocol whitelist is more
+accurate, because counts alone cannot tell a cell from a recurring extraction artifact.</p>
 <p><em>Notes:</em>
-- Barcode calling is performed much better if the whitelist contains a small number of barcodes. 
-If you have a subset of barcodes, for example, from short-read data, provide them instead of the full whitelist;
+- What the whitelist means depends on <code>--n_cells</code>. Without it the whitelist is taken to be the
+list of cell barcodes, and every read is matched against all of them. A stock whitelist has
+millions of entries but a run has a few thousand cells, and matching against millions of
+candidates effectively requires an exact match, so reads carrying a sequencing error in the
+barcode are lost. Set <code>--n_cells</code> to treat the whitelist as a pool instead;
+- If you have a subset of barcodes, for example from short-read data, providing them directly
+also works and skips the extra pass over the reads;
 - Spl-IsoQuant will perform per-barcode quantification automatically unless <code>--barcoded_reads</code> or  <code>--barcode2spot</code> are set.</p>
+<p><code>--n_cells</code></p>
+<p>Expected number of cell-associated barcodes, or <code>auto</code> to estimate it from the barcode count
+distribution. Setting it turns <code>--barcode_whitelist</code> into a pool of candidates: Spl-IsoQuant makes a
+first pass over the reads to extract and count barcode windows, picks the cell barcodes from
+those counts, and then matches the reads against that much shorter list.</p>
+<p>This costs one extra pass over the reads and is what makes a stock whitelist usable. <code>auto</code> is
+as accurate as giving the exact count, and selection tolerates being off by roughly ±25% (see
+<code>--n_cells_interval</code>).</p>
+<p>Supported for <code>tenX_v3</code>, <code>tenX_v2</code> and <code>visium_5prime</code>.</p>
+<p><code>--n_cells_interval</code></p>
+<p>Percentage by which the number of selected barcodes may differ from <code>--n_cells</code> [25].</p>
+<p><code>--barcode_correction</code></p>
+<p>Overrides how the cell barcode list is obtained, which is otherwise decided by <code>--n_cells</code>:</p>
+<ul>
+<li><code>auto</code> (default) - detect cell barcodes if <code>--n_cells</code> is set, otherwise use the whitelist as given</li>
+<li><code>whitelist</code> - always match reads against the whitelist as given</li>
+<li><code>detect</code> - always detect cell barcodes from read counts, estimating the count if <code>--n_cells</code> is not set</li>
+</ul>
 <p><code>--barcoded_reads</code></p>
 <p>Path to TSV file(s) with pre-called barcoded reads.
 Format: <code>read_id&lt;TAB&gt;barcode&lt;TAB&gt;umi</code> (one read per line).
@@ -1566,6 +1692,7 @@ However, the parameters will be overridden if the matching strategy is set manua
 <li><code>reliable</code> - only the most abundant and reliable transcripts are reported, precise, but not sensitive;  </li>
 <li><code>default_pacbio</code> - optimal settings for PacBio CCS reads;</li>
 <li><code>sensitive_pacbio</code> - sensitive settings for PacBio CCS reads, more transcripts are reported possibly at a cost of precision;</li>
+<li><code>pacbio_all</code> - very sensitive settings for PacBio CCS reads; admits single-read novel isoforms and recovers lowly-covered or 5'-truncated genes. Best suited for clean full-length PacBio reads (e.g. Iso-Seq FLNC); reports the most transcripts at a further cost of novel precision;</li>
 <li><code>fl_pacbio</code> - optimal settings for full-length PacBio CCS reads; will be used if <code>--data_type pacbio_ccs</code> and <code>--fl_data</code> options are set;</li>
 <li><code>default_ont</code> - optimal settings for ONT reads, novel mono-exonic transcripts are not reported (use <code>--report_novel_unspliced true</code>);</li>
 <li><code>sensitive_ont</code> - sensitive settings for ONT reads, more transcripts are reported possibly at a cost of precision (including novel mono-exonic isoforms);</li>
@@ -1594,12 +1721,28 @@ polyA tails are always required for 1/2-exon transcripts when using ONT data (th
 <li><code>always</code> - reported transcripts are always required to have polyA support in the reads.</li>
 </ul>
 <p>Note that polyA tails are always required for reporting novel unspliced isoforms. </p>
+<p><code>--novel_apa</code>
+    Report novel isoforms that have identical intron chain but distinct polyA sites (or TSS when <code>--fl_data</code> is set). 
+    By default, Spl-IsoQuant will report only one novel isoform with a certain intron chain. 
+    Known isoforms with the same intron chain and alternative polyA or transcript start sites will still be reported.</p>
+<p><code>--no_splice_site_correction</code>
+    Disable canonical splice-site correction for novel transcript models. Reference junctions are not affected.</p>
+<p><code>--use_replicas</code>
+    When several files are given for a single sample,
+    novel transcripts are required to be confirmed by reads from at least 2 files (replicas).
+    Set to <code>false</code> to disable this requirement. Default is <code>true</code>.</p>
 <h2 id="hidden-options">Hidden options</h2>
 <p>The options below are shown only with <code>--full_help</code> option.
 We recommend <em>not</em> to modify these options unless you are clearly aware of their effect.</p>
 <h4 id="pipeline-settings">Pipeline settings</h4>
 <p><code>--no_gzip</code>
-    Do not compress large output files.</p>
+    Do not compress large output files.
+    Compressed outputs use gzip level 6 for tables and level 4 for FASTA, which is where the
+    time/size trade-off sits for each kind of data.
+    This also covers the single-cell outputs: the split-reads FASTA (compressed as it is
+    written, in the barcode-calling workers) and the barcoded read tables (compressed once the
+    run finishes, so they stay readable while the pipeline needs them). Neither slows any
+    subsequent step down.</p>
 <p><code>--no_gtf_check</code>
     Do not perform input GTF checks.</p>
 <p><code>--process_only_chr</code>
@@ -1619,6 +1762,9 @@ We recommend <em>not</em> to modify these options unless you are clearly aware o
 <p><code>--high_memory</code>
     Cache read alignments instead for making several passes over a BAM file, noticeably increases RAM usage,
     but may improve running time when disk I/O is relatively slow.</p>
+<p><code>--keep_tmp</code>
+    Do not remove temporary files in the end (e.g. binary read assignments in <code>aux/</code>); useful for debugging
+    and for reusing assignments via <code>--read_assignments</code>.</p>
 <h4 id="aligner-settings">Aligner settings</h4>
 <p><code>--aligner</code>
     Force to use this alignment method, can be <code>starlong</code> or <code>minimap2</code>; default is <code>minimap2</code>. 

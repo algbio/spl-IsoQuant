@@ -570,10 +570,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#read-splitting-modes" class="md-nav__link">
+  <a href="#detecting-cell-barcodes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Read splitting modes
+        Detecting cell barcodes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-splitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read splitting
       
     </span>
   </a>
@@ -1041,10 +1052,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#read-splitting-modes" class="md-nav__link">
+  <a href="#detecting-cell-barcodes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Read splitting modes
+        Detecting cell barcodes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-splitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read splitting
       
     </span>
   </a>
@@ -1179,20 +1201,6 @@ which can also be used as a standalone tool.</p>
 <td>Single 16bp barcode (v2 chemistry)</td>
 </tr>
 <tr>
-<td><code>tenX_v3_split</code></td>
-<td>10x Genomics 3' v3</td>
-<td>1</td>
-<td>12</td>
-<td>Concatenated reads: splits into individual cDNA molecules</td>
-</tr>
-<tr>
-<td><code>tenX_v2_split</code></td>
-<td>10x Genomics 3' v2</td>
-<td>1</td>
-<td>10</td>
-<td>Concatenated reads: splits into individual cDNA molecules (v2 chemistry)</td>
-</tr>
-<tr>
 <td><code>visium_5prime</code></td>
 <td>10x Genomics Visium 5'</td>
 <td>1</td>
@@ -1218,14 +1226,7 @@ which can also be used as a standalone tool.</p>
 <td>Stereo-seq</td>
 <td>1</td>
 <td>10</td>
-<td>25bp barcode, read splitting mode</td>
-</tr>
-<tr>
-<td><code>stereoseq_nosplit</code></td>
-<td>Stereo-seq</td>
-<td>1</td>
-<td>10</td>
-<td>25bp barcode, no read splitting</td>
+<td>25bp barcode</td>
 </tr>
 <tr>
 <td><code>custom_sc</code></td>
@@ -1268,33 +1269,48 @@ which can also be used as a standalone tool.</p>
 <li><code>bulk</code> -- standard bulk RNA-seq mode (default)</li>
 <li><code>tenX_v3</code> -- 10x Genomics single-cell 3' gene expression</li>
 <li><code>tenX_v2</code> -- 10x Genomics single-cell 3' v2 gene expression</li>
-<li><code>tenX_v3_split</code> -- 10x Genomics 3' v3 with read splitting for concatenated reads (see <a href="#read-splitting-modes">below</a>)</li>
-<li><code>tenX_v2_split</code> -- 10x Genomics 3' v2 with read splitting for concatenated reads</li>
 <li><code>curio</code> -- Curio Bioscience single-cell</li>
 <li><code>visium_hd</code> -- 10x Genomics Visium HD spatial transcriptomics</li>
 <li><code>visium_5prime</code> -- 10x Genomics Visium 5' spatial transcriptomics</li>
-<li><code>stereoseq</code> -- Stereo-seq spatial transcriptomics, with read splitting</li>
-<li><code>stereoseq_nosplit</code> -- Stereo-seq without read splitting</li>
+<li><code>stereoseq</code> -- Stereo-seq spatial transcriptomics</li>
 <li><code>custom_sc</code> -- custom single-cell/spatial mode using a molecule definition file (MDF)</li>
 </ul>
 <p>All modes except <code>bulk</code> enable automatic barcode calling and UMI-based deduplication.</p>
+<p><code>--split_molecules</code></p>
+<p>Whether to split reads containing several cDNA molecules, see <a href="#read-splitting">read splitting</a>.
+<code>auto</code> (default) splits wherever the protocol supports it; <code>true</code> also fails for protocols that
+cannot split; <code>false</code> never splits.</p>
 <p><code>--barcode_whitelist</code></p>
 <p>Path to file(s) with barcode whitelist(s) for barcode calling.
 Required for single-cell/spatial modes unless <code>--barcoded_reads</code> or <code>--barcoded_bam</code> is provided.</p>
 <p>File should contain one barcode sequence per line. 
 More than 1 tab-separated column is allowed, but only the first will be used.
 Supports plain text and gzipped files.</p>
+<p>Accepts the literal value <code>auto</code> instead of a file, see
+<a href="#detecting-cell-barcodes">detecting cell barcodes</a>.</p>
 <p><em>Notes:</em>
-- Barcode calling is performed much better if the whitelist contains a small number of barcodes. 
-If you have a subset of barcodes from short-read data, provide them instead of the full whitelist;
+- What the whitelist means depends on <code>--n_cells</code>, see <a href="#detecting-cell-barcodes">detecting cell barcodes</a>.
+Without it the whitelist is taken to be the list of cell barcodes;
+- If you have a subset of barcodes from short-read data, providing them directly also works and
+skips the extra pass over the reads;
 - Spl-IsoQuant will perform per-barcode quantification automatically unless <code>--barcoded_reads</code> or  <code>--barcode2spot</code> are set.
 Use <code>--read_group barcode</code> to group reads by barcode explicitly. In case of a large number of barcodes, it may take a lot of time. </p>
 <p>The number of whitelist files depends on the mode:</p>
 <ul>
-<li>1 file: <code>tenX_v3</code>, <code>tenX_v2</code>, <code>tenX_v3_split</code>, <code>tenX_v2_split</code>, <code>visium_5prime</code>, <code>stereoseq</code>, <code>stereoseq_nosplit</code>, <code>curio</code> (combined 14bp barcodes)</li>
+<li>1 file: <code>tenX_v3</code>, <code>tenX_v2</code>, <code>visium_5prime</code>, <code>stereoseq</code>, <code>curio</code> (combined 14bp barcodes)</li>
 <li>2 files: <code>visium_hd</code> (part 1 and part 2 barcode lists)</li>
 <li>Not needed: <code>custom_sc</code> (barcode lists are specified inside the MDF file)</li>
 </ul>
+<p><code>--n_cells</code></p>
+<p>Expected number of cell-associated barcodes, or <code>auto</code> to estimate it from the data.
+Turns <code>--barcode_whitelist</code> into a pool of candidates rather than the cell list itself,
+see <a href="#detecting-cell-barcodes">detecting cell barcodes</a>.</p>
+<p><code>--n_cells_interval</code></p>
+<p>Percentage by which the number of selected barcodes may differ from <code>--n_cells</code> [25].</p>
+<p><code>--barcode_correction</code></p>
+<p>Overrides how the cell barcode list is obtained, which is otherwise decided by <code>--n_cells</code>:
+<code>auto</code> (default), <code>whitelist</code> (always use the whitelist as given), or <code>detect</code> (always detect
+cell barcodes from read counts).</p>
 <p><code>--barcoded_reads</code></p>
 <p>Path to TSV file(s) with pre-called barcoded reads.
 Format: <code>read_id&lt;TAB&gt;barcode&lt;TAB&gt;umi</code> (one read per line).
@@ -1452,17 +1468,96 @@ For example:
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>UMI         VAR_ANY    12
 </span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>TSO       CONST      CCCATGTACTCTGCGTTGATACCACTGCTT
 </span></code></pre></div></p>
-<h2 id="read-splitting-modes">Read splitting modes</h2>
-<p>Oxford Nanopore long reads often contain 2 or more cDNA molecules.
-Usual non-split modes (<code>tenX_v3</code>, <code>tenX_v2</code>, <code>stereoseq_nosplit</code>) detect only the first
-barcode and the rest of the read is treated as a single cDNA.
-The split modes detect multiple barcode/UMI patterns within each read,
-split the read at molecule boundaries, and produce a new FASTA file
-with one record per cDNA molecule.</p>
-<p>The split modes produce an additional output file (<code>*.split_reads.fasta</code>)
-containing the extracted cDNA segments. Each segment is named with
-the original read ID plus coordinates and strand: <code>{read_id}_{start}_{end}_{strand}</code>.</p>
-<p>These modes are recommended to use with ONT reads.</p>
+<h2 id="detecting-cell-barcodes">Detecting cell barcodes</h2>
+<p>A stock 10x whitelist has millions of entries, but a run has a few thousand cells. Matching
+every read against millions of candidates only means something if the match is exact, so any
+read carrying a sequencing error in the barcode is lost.</p>
+<p><code>--n_cells</code> changes what <code>--barcode_whitelist</code> means so that this is not necessary:</p>
+<table>
+<thead>
+<tr>
+<th><code>--n_cells</code></th>
+<th>meaning of <code>--barcode_whitelist</code></th>
+<th>passes over the reads</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>not set</td>
+<td>the list of cell barcodes; reads are matched against all of it</td>
+<td>1</td>
+</tr>
+<tr>
+<td>a number, or <code>auto</code></td>
+<td>a pool to select the cell barcodes from</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>With <code>--n_cells</code> set, the first pass extracts barcode windows from the reads verbatim and counts
+them, the counts pick the cell barcodes out of the pool, and the second pass is ordinary barcode
+calling against that much shorter list. Correction itself is unchanged — only the list being
+matched against differs.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>splisoquant.py<span class="w"> </span>--mode<span class="w"> </span>tenX_v3<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>--barcode_whitelist<span class="w"> </span>3M-february-2018.txt.gz<span class="w"> </span>--n_cells<span class="w"> </span>auto<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--fastq<span class="w"> </span>reads.fastq.gz<span class="w"> </span>--reference<span class="w"> </span>genome.fa<span class="w"> </span>--genedb<span class="w"> </span>genes.gtf<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>--data_type<span class="w"> </span>nanopore<span class="w"> </span>-o<span class="w"> </span>output_dir
+</span></code></pre></div>
+<p><code>auto</code> is as accurate as giving the exact cell count, and selection tolerates being off by
+roughly ±25% (<code>--n_cells_interval</code>). Supported for <code>tenX_v3</code>, <code>tenX_v2</code> and <code>visium_5prime</code>.</p>
+<p><code>--barcode_whitelist auto</code> detects cell barcodes with no pool at all. This is less accurate: a
+mis-anchored barcode window repeats across reads and looks exactly like an abundant cell,
+whereas a whitelist rejects it because it is not a valid protocol barcode.</p>
+<p>The detected list is written to <code>&lt;prefix&gt;.cell_barcodes.tsv</code>, with a summary of how many
+barcodes were extracted, skipped and selected in <code>&lt;prefix&gt;.cell_barcodes.stats</code>.</p>
+<h2 id="read-splitting">Read splitting</h2>
+<p>Oxford Nanopore long reads often contain 2 or more cDNA molecules ligated end to end during
+library preparation. Without splitting, only the first barcode is detected and the rest of the
+read is treated as a single cDNA. With splitting, Spl-IsoQuant detects every barcode/UMI pattern in
+the read, cuts the read at molecule boundaries, and produces a new FASTA file with one record
+per cDNA molecule.</p>
+<p>Splitting is controlled by <code>--split_molecules</code>:</p>
+<table>
+<thead>
+<tr>
+<th>value</th>
+<th>behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>auto</code> (default)</td>
+<td>split wherever the protocol supports it, do nothing where it does not</td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td>split, and stop with an error if the protocol cannot split</td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td>never split</td>
+</tr>
+</tbody>
+</table>
+<p>Supported for <code>tenX_v3</code>, <code>tenX_v2</code>, <code>stereoseq</code> and <code>visium_5prime</code>. <code>--split_molecules true</code>
+with any other mode is an error rather than a silent no-op, so a request that cannot be
+honoured never passes unnoticed.</p>
+<p>When splitting, Spl-IsoQuant writes an additional output file (<code>*.split_reads_&lt;i&gt;.fa.gz</code>) containing
+the extracted cDNA segments, and uses it in place of the original reads for alignment. Each
+segment is named with the original read ID plus coordinates and strand:
+<code>{read_id}_{start}_{end}_{strand}</code>. The file is gzipped unless <code>--no_gzip</code> is set; minimap2
+reads it compressed, so alignment is not slowed down.</p>
+<p>Splitting rewrites the reads, so the pieces have to be aligned afresh. Supplying an aligned
+BAM (<code>--bam</code>) says the opposite - that no mapping should happen - so the two requests
+contradict each other and Spl-IsoQuant aborts rather than guessing. This applies to <code>auto</code> as well
+as <code>true</code>: pass the raw reads if you want the molecules split and re-aligned, or
+<code>--split_molecules false</code> to analyse the alignments as they are.</p>
+<p>Splitting is worth leaving on even for libraries you do not expect to be concatenated: measured
+on non-concatenated 10x data it recovers about one extra point of recall at unchanged precision
+(87.3% → 88.3% on ONT R9, 89.6% → 90.5% on ONT cDNA R10.4), at roughly twice the barcode
+calling runtime.</p>
+<p>The superseded mode names <code>tenX_v3_split</code>, <code>tenX_v2_split</code> and <code>stereoseq_nosplit</code> still work
+and are translated to the corresponding <code>--mode</code> plus <code>--split_molecules</code> combination.</p>
 <h2 id="umi-deduplication">UMI deduplication</h2>
 <p>All single-cell and spatial modes perform UMI-based PCR deduplication after isoform assignment.
 Within each cell barcode and gene, reads with similar UMIs (similarity criteria depends on the UMI length)
@@ -1477,14 +1572,14 @@ are stored in a <a href="formats.html#read-info-default-output"><code>read_info.
 <p>When multiple barcodes correspond to the same spatial spot, UMI deduplication can be performed using 
 these spots instead of individual barcodes. 
 In this case, use <code>--barcode2barcode</code> option to provide barcode to spot mapping (see details above).</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>splisoquant.py<span class="w"> </span>--reference<span class="w"> </span>genome.fa<span class="w"> </span>--genedb<span class="w"> </span>genes.gtf<span class="w"> </span>--complete_genedb<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>--fastq<span class="w"> </span>reads.fastq.gz<span class="w"> </span>--data_type<span class="w"> </span>nanopore<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--mode<span class="w"> </span>visium_hd<span class="w"> </span>--barcode_whitelist<span class="w"> </span>part1.txt<span class="w"> </span>part2.txt<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>--barcode2barcode<span class="w"> </span>barcode2spot.tsv:0:1,2<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span>-o<span class="w"> </span>visium_output
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>splisoquant.py<span class="w"> </span>--reference<span class="w"> </span>genome.fa<span class="w"> </span>--genedb<span class="w"> </span>genes.gtf<span class="w"> </span>--complete_genedb<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--fastq<span class="w"> </span>reads.fastq.gz<span class="w"> </span>--data_type<span class="w"> </span>nanopore<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--mode<span class="w"> </span>visium_hd<span class="w"> </span>--barcode_whitelist<span class="w"> </span>part1.txt<span class="w"> </span>part2.txt<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>--barcode2barcode<span class="w"> </span>barcode2spot.tsv:0:1,2<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span>-o<span class="w"> </span>visium_output
 </span></code></pre></div>
 <p>For Visium HD, generate the mapping file from per-part coordinate files:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>python<span class="w"> </span>isoquant_lib/scripts/prepare_visium_spot_ids.py<span class="w"> </span>part1_to_y.tsv<span class="w"> </span>part2_to_x.tsv<span class="w"> </span>-o<span class="w"> </span>barcode2spot.tsv
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>python<span class="w"> </span>isoquant_lib/scripts/prepare_visium_spot_ids.py<span class="w"> </span>part1_to_y.tsv<span class="w"> </span>part2_to_x.tsv<span class="w"> </span>-o<span class="w"> </span>barcode2spot.tsv
 </span></code></pre></div>
 <h2 id="output">Output</h2>
 <h3 id="count-matrices">Count matrices</h3>

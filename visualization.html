@@ -685,6 +685,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#output" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -806,6 +817,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#output" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -842,17 +864,30 @@
 <h2 id="command-line-options">Command line options</h2>
 <ul>
 <li><code>output_directory</code> (required): Directory containing Spl-IsoQuant output files.</li>
-<li>
-<ul>
 <li><code>--gene_list</code> (required): Path to a .txt file containing a list of genes, each on its own line.</li>
-</ul>
-</li>
 <li><code>--viz_output</code>: Optional directory to save visualization output files. Defaults to the main output directory if not specified.</li>
 <li><code>--gtf</code>: Optional path to a GTF file if it cannot be extracted from the Spl-IsoQuant log.</li>
 <li><code>--counts</code>: Use counts instead of TPM files for visualization.</li>
 <li><code>--ref_only</code>: Use only reference transcript quantification instead of transcript model quantification.</li>
 <li><code>--filter_transcripts</code>: Filter transcripts by minimum value occurring in at least one condition.</li>
+<li><code>--find_genes [N]</code>: Rank genes by a combined rank of expression, expression difference and transcript usage deviance relative to the <code>wild_type</code> condition, and visualize the top N genes (default is 100).</li>
+<li><code>--known_genes_path</code>: Path to a file with known target genes (one per line), used together with <code>--find_genes</code> to mark known targets in the ranking.</li>
+<li><code>--read_group_strategy</code>: Grouping strategy whose grouped counts are visualized, named as it
+appears in the grouped counts file names (<code>SAMPLE_ID.gene_grouped_&lt;strategy&gt;_counts.tsv</code>), e.g.
+<code>file_name</code>, <code>barcode</code>, <code>tag_CB</code> for <code>--read_group tag:CB</code> or <code>file0_col1</code> for a grouping table.
+Defaults to the first strategy given with <code>--read_group</code> in the original run that has grouped counts
+in the output directory; strategies Spl-IsoQuant adds on its own (e.g. <code>barcode</code> in single-cell modes,
+<code>file_name</code> for several input files) are not recorded, so for them the alphabetically first strategy
+is used. An unknown strategy is reported as an error.</li>
 </ul>
+<h2 id="input-files">Input files</h2>
+<p>Read assignment statistics are taken from <code>SAMPLE_ID.read_info.tsv.gz</code>, or from the deprecated
+<code>SAMPLE_ID.read_assignments.tsv.gz</code> when that is the only per-read file present.
+If neither is in the output directory, re-run Spl-IsoQuant with <code>--large_output read_info</code>.</p>
+<p>Grouped counts are plotted per condition only when the number of groups is small
+(up to 100, as for <code>--read_group file_name</code>). Single-cell and spatial runs produce one group
+per barcode or spot, so the visualizer falls back to the ungrouped counts for them
+and reports this on the console.</p>
 <h2 id="output">Output</h2>
 <p>The visualization tool generates the following plots based on the Spl-IsoQuant output:</p>
 <ol>
